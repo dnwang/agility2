@@ -48,13 +48,26 @@ public enum ActivityRouter {
 
     private static final String TAG = ActivityRouter.class.getSimpleName();
 
-    static {
-        AsyncHelper.INSTANCE.once(new Runnable() {
-            @Override
-            public void run() {
-                INSTANCE.initPathMaps();
+    public static void init(Context ctx) {
+        INSTANCE.pathMaps.clear();
+        try {
+            PackageInfo packageInfo = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), PackageManager.GET_ACTIVITIES);
+            for (ActivityInfo aInfo : packageInfo.activities) {
+                try {
+                    Class cls = Class.forName(aInfo.name);
+                    if (cls.isAnnotationPresent(Path.class)) {
+                        String path = ((Path) cls.getAnnotation(Path.class)).value();
+                        if (!TextUtils.isEmpty(path)) {
+                            INSTANCE.pathMaps.put(path, cls);
+                        }
+                    }
+                } catch (Exception e) {
+                    LogUtils.e(TAG, e.getMessage());
+                }
             }
-        });
+        } catch (PackageManager.NameNotFoundException e) {
+            LogUtils.e(TAG, e.getMessage());
+        }
     }
 
     public static LaunchTaskGroup build(@NonNull String uri) {
@@ -157,29 +170,6 @@ public enum ActivityRouter {
     }
 
     private final Map<String, Class<? extends Activity>> pathMaps = new HashMap<>();
-
-    private void initPathMaps() {
-        pathMaps.clear();
-        try {
-            final Context ctx = CommonTools.getApplication();
-            PackageInfo packageInfo = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), PackageManager.GET_ACTIVITIES);
-            for (ActivityInfo aInfo : packageInfo.activities) {
-                try {
-                    Class cls = Class.forName(aInfo.name);
-                    if (cls.isAnnotationPresent(Path.class)) {
-                        String path = ((Path) cls.getAnnotation(Path.class)).value();
-                        if (!TextUtils.isEmpty(path)) {
-                            pathMaps.put(path, cls);
-                        }
-                    }
-                } catch (Exception e) {
-                    LogUtils.e(TAG, e.getMessage());
-                }
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            LogUtils.e(TAG, e.getMessage());
-        }
-    }
 
     private final Set<Function1<Boolean, Intent>> filters = new HashSet<>(2);
 

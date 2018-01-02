@@ -61,12 +61,12 @@ public final class CommonTools {
 
     private static WeakReference<Application> appReference;
 
-    public static Context getApplication() {
+    public static Application getApplication() {
         Application application = (null != appReference) ? appReference.get() : null;
         if (null == application) {
             try {
-                application = (Application) Class.forName("android.app.ActivityThread")
-                        .getMethod("currentApplication").invoke(null, (Object[]) null);
+                application = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
+                        "currentApplication");
                 appReference = new WeakReference<>(application);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -76,30 +76,31 @@ public final class CommonTools {
     }
 
     public static Activity getTopActivity() {
+        Activity activity = null;
         try {
-            Class activityThreadClass = Class.forName("android.app.ActivityThread");
-            Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
-            Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
-            activitiesField.setAccessible(true);
-            Map activities = (Map) activitiesField.get(activityThread);
+            final Object activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
+                    "currentActivityThread");
+            final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
             for (Object activityRecord : activities.values()) {
-                Activity activity = FieldUtils.getFieldValue(activityRecord, "activity");
+                Activity topObj = FieldUtils.getFieldValue(activityRecord, "activity");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    Boolean isTop = FieldUtils.invokeMethod(activity, "isTopOfTask");
+                    Boolean isTop = FieldUtils.invokeMethod(topObj, "isTopOfTask");
                     if (null != isTop && isTop) {
-                        return activity;
+                        activity = topObj;
+                        break;
                     }
                 } else {
                     Boolean paused = FieldUtils.getFieldValue(activityRecord, "paused");
                     if (null != paused && !paused) {
-                        return activity;
+                        activity = topObj;
+                        break;
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return activity;
     }
 
     public static Activity finishAllActivities() {
