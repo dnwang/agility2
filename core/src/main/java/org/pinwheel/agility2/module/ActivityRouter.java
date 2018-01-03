@@ -8,6 +8,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -185,8 +187,17 @@ public enum ActivityRouter {
         }
     }
 
-    public void start(LaunchTask... tasks) {
+    public void start(final LaunchTask... tasks) {
         if (null == tasks || 0 == tasks.length) {
+            return;
+        }
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    start(tasks);
+                }
+            });
             return;
         }
         final Context ctx = CommonTools.getTopActivity();

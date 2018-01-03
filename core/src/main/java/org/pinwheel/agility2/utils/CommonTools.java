@@ -18,6 +18,7 @@ import android.os.StatFs;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.text.Spannable;
@@ -61,6 +62,7 @@ public final class CommonTools {
 
     private static WeakReference<Application> appReference;
 
+    @Nullable
     public static Application getApplication() {
         Application application = (null != appReference) ? appReference.get() : null;
         if (null == application) {
@@ -69,15 +71,18 @@ public final class CommonTools {
                         "currentApplication");
                 appReference = new WeakReference<>(application);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
         return application;
     }
 
+    @UiThread
+    @Nullable
     public static Activity getTopActivity() {
         Activity activity = null;
         try {
+            // currentActivityThread must be run in uiThread
             final Object activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
                     "currentActivityThread");
             final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
