@@ -62,7 +62,6 @@ public final class CommonTools {
 
     private static WeakReference<Application> appReference;
 
-    @Nullable
     public static Application getApplication() {
         Application application = (null != appReference) ? appReference.get() : null;
         if (null == application) {
@@ -78,7 +77,6 @@ public final class CommonTools {
     }
 
     @UiThread
-    @Nullable
     public static Activity getTopActivity() {
         Activity activity = null;
         try {
@@ -281,31 +279,33 @@ public final class CommonTools {
 
     public static String getDeviceNetType(Context context) {
         String type = "";
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo info = cm.getActiveNetworkInfo();
-        if (info == null) {
-            type = null;
-        } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
-            type = "wifi";
-        } else if (info.getType() == ConnectivityManager.TYPE_MOBILE) {
-            int subType = info.getSubtype();
-            if (subType == TelephonyManager.NETWORK_TYPE_CDMA || subType == TelephonyManager.NETWORK_TYPE_GPRS
-                    || subType == TelephonyManager.NETWORK_TYPE_EDGE) {
-                type = "2G";
-            } else if (subType == TelephonyManager.NETWORK_TYPE_UMTS || subType == TelephonyManager.NETWORK_TYPE_HSDPA
-                    || subType == TelephonyManager.NETWORK_TYPE_EVDO_A || subType == TelephonyManager.NETWORK_TYPE_EVDO_0
-                    || subType == TelephonyManager.NETWORK_TYPE_EVDO_B) {
-                type = "3G";
-            } else if (subType == TelephonyManager.NETWORK_TYPE_LTE) {// LTE是3g到4g的过渡，是3.9G的全球标准
-                type = "4G";
+        if (null != context) {
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
+            if (info == null) {
+                type = null;
+            } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
+                type = "wifi";
+            } else if (info.getType() == ConnectivityManager.TYPE_MOBILE) {
+                int subType = info.getSubtype();
+                if (subType == TelephonyManager.NETWORK_TYPE_CDMA || subType == TelephonyManager.NETWORK_TYPE_GPRS
+                        || subType == TelephonyManager.NETWORK_TYPE_EDGE) {
+                    type = "2G";
+                } else if (subType == TelephonyManager.NETWORK_TYPE_UMTS || subType == TelephonyManager.NETWORK_TYPE_HSDPA
+                        || subType == TelephonyManager.NETWORK_TYPE_EVDO_A || subType == TelephonyManager.NETWORK_TYPE_EVDO_0
+                        || subType == TelephonyManager.NETWORK_TYPE_EVDO_B) {
+                    type = "3G";
+                } else if (subType == TelephonyManager.NETWORK_TYPE_LTE) {// LTE是3g到4g的过渡，是3.9G的全球标准
+                    type = "4G";
+                }
             }
         }
         return type;
     }
 
     public static String getIMEI(Context context) {
-        final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         try {
+            final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             return tm.getDeviceId();
         } catch (Exception e) {
             return "";
@@ -313,8 +313,8 @@ public final class CommonTools {
     }
 
     public static String getIMSI(Context context) {
-        final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         try {
+            final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             return tm.getSubscriberId();
         } catch (Exception e) {
             return "";
@@ -322,6 +322,9 @@ public final class CommonTools {
     }
 
     public static String getPhoneType(Context context) {
+        if (null == context) {
+            return "";
+        }
         final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         switch (tm.getPhoneType()) {
             case TelephonyManager.PHONE_TYPE_CDMA:
