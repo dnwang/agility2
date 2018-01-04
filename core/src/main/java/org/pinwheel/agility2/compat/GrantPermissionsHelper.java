@@ -23,7 +23,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * @author dnwang
  * @version 7/27/16,20:52
- * @see
  */
 public final class GrantPermissionsHelper {
 
@@ -69,9 +68,6 @@ public final class GrantPermissionsHelper {
         }
     }
 
-    /**
-     * Please call this method on {@link Activity#onRequestPermissionsResult}
-     */
     public void onRequestPermissionsResult(int key, String[] permissions, int[] grantResults) {
         if (REQ_CODE != key || null == permissions || null == grantResults) {
             return;

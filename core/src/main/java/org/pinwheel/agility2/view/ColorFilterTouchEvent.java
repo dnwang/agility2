@@ -16,7 +16,6 @@ import android.widget.TextView;
  *
  * @author dnwang
  * @version 28/11/2017,21:13
- * @see
  */
 public final class ColorFilterTouchEvent implements View.OnTouchListener {
 

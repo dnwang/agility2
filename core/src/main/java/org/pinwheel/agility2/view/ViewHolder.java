@@ -53,7 +53,6 @@ import java.lang.ref.SoftReference;
  *
  * @author dnwang
  * @version 2016/10/17,14:37
- * @see
  */
 public final class ViewHolder {
 
@@ -84,7 +83,7 @@ public final class ViewHolder {
         return contentView;
     }
 
-    /******************** getter */
+
     public <T extends View> T getView(int id) {
         if (holder == null) {
             holder = new SparseArray<>();
@@ -198,8 +197,6 @@ public final class ViewHolder {
     public DraggableBubbleView getPop(int id) {
         return getView(id);
     }
-
-    /******************* function */
 
     public String getStringByTag(int id) {
         Object tag = getTag(id);

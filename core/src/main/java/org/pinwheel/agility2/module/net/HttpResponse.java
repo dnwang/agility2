@@ -10,7 +10,6 @@ import java.util.Map;
  *
  * @author dnwang
  * @version 2017/2/23,11:08
- * @see
  */
 public class HttpResponse extends HttpPacket {
 

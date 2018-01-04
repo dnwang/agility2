@@ -23,7 +23,6 @@ import java.util.Set;
  *
  * @author dnwang
  * @version 2016/10/26,11:22
- * @see
  */
 public abstract class MultiCacheAdapter extends SimpleArrayAdapter<Object> {
 

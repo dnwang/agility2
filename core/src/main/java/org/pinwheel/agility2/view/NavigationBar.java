@@ -21,7 +21,6 @@ import java.util.List;
  *
  * @author dnwang
  * @version 26/10/2016,00:07
- * @see
  */
 public final class NavigationBar implements ViewPager.OnPageChangeListener {
 

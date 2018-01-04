@@ -8,7 +8,6 @@ package org.pinwheel.agility2.action;
  *
  * @author dnwang
  * @version 27/09/2016,22:34
- * @see
  */
 public interface Function2<R, T, K> {
 

@@ -42,7 +42,6 @@ import java.util.Set;
  *
  * @author dnwang
  * @version 19/10/2016,23:43
- * @see
  */
 public enum ActivityRouter {
 
@@ -102,9 +101,6 @@ public enum ActivityRouter {
         return new LaunchTask(cls, null);
     }
 
-    /**
-     * Call this method when target activity created
-     */
     public static void injectFields(final Activity target, final Bundle args) {
         if (null == target || null == args || args.isEmpty()) {
             return;

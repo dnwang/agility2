@@ -16,7 +16,6 @@ import org.pinwheel.agility2.utils.CommonTools;
  *
  * @author dnwang
  * @version 8/4/16,22:31
- * @see
  */
 public enum PreferencesHelper {
 

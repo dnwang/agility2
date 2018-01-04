@@ -46,13 +46,13 @@ public class DragRefreshWrapper extends FrameLayout implements Draggable.OnDragL
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        syncDraggable();// xml加载完成时
+        syncDraggable();
     }
 
     @Override
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
         super.addView(child, index, params);
-        syncDraggable();// 有视图被添加时
+        syncDraggable();
     }
 
     @Override
@@ -82,7 +82,6 @@ public class DragRefreshWrapper extends FrameLayout implements Draggable.OnDragL
     private void syncDraggable() {
         Draggable tmp = findDraggable(this);
         if (tmp != draggable) {
-            // 先解绑
             if (null != draggable) {
                 draggable.removeOnDragListener(this);
                 headerIndicator.bindDraggable(null);

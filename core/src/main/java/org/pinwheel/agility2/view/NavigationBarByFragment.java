@@ -25,7 +25,6 @@ import java.util.List;
  *
  * @author dnwang
  * @version 26/10/2016,00:07
- * @see
  */
 public final class NavigationBarByFragment implements ViewPager.OnPageChangeListener {
 
@@ -46,9 +45,6 @@ public final class NavigationBarByFragment implements ViewPager.OnPageChangeList
         return this;
     }
 
-    /**
-     * Fragment内嵌Fragment需要getChildFragmentManager获取FragmentManager
-     */
     public NavigationBarByFragment setViewPager(ViewPager viewPager, FragmentManager fragmentManager) {
         if (null != this.viewPager) {
             this.viewPager.removeOnPageChangeListener(this);

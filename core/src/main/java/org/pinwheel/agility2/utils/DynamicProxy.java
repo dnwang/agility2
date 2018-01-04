@@ -20,7 +20,6 @@ import java.util.Map;
  *
  * @author dnwang
  * @version 28/10/2017,08:12
- * @see
  */
 public final class DynamicProxy implements InvocationHandler {
 
@@ -57,9 +56,6 @@ public final class DynamicProxy implements InvocationHandler {
         });
     }
 
-    /**
-     * proxy all when method is empty
-     */
     public DynamicProxy add(@NonNull String method, @NonNull Function3<Boolean, Object, Method, Object[]> function) {
         if (!funcMaps.containsKey(method)) {
             funcMaps.put(method, function);

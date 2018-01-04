@@ -23,9 +23,6 @@ public final class DigestUtils {
         throw new AssertionError();
     }
 
-    /**
-     * encode By MD5
-     */
     public static String md5(String str) {
         if (str == null) {
             return null;
@@ -39,9 +36,6 @@ public final class DigestUtils {
         }
     }
 
-    /**
-     * 对文件的片段MD5
-     */
     public static String md5(File file, int startPon, int length) {
         RandomAccessFile fileReader = null;
         try {

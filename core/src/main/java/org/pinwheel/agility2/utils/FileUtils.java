@@ -16,9 +16,6 @@ public final class FileUtils {
         throw new AssertionError();
     }
 
-    /**
-     * create parent dirs
-     */
     public static boolean prepareDirs(final File file) {
         boolean result = false;
         if (null != file) {
@@ -30,9 +27,6 @@ public final class FileUtils {
         return result;
     }
 
-    /**
-     * delete file or directory
-     */
     public static boolean delete(final File file) {
         boolean result = true;
         if (null == file || !file.exists()) {

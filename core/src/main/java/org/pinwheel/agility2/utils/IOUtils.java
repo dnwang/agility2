@@ -127,9 +127,6 @@ public final class IOUtils {
         return true;
     }
 
-    /**
-     * @return byte size of stream
-     */
     public static int connect(InputStream inputStream, OutputStream outputStream) {
         int size = -1;
         BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);

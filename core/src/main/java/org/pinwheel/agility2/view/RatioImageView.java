@@ -15,7 +15,6 @@ import org.pinwheel.agility2.utils.CommonTools;
  *
  * @author dnwang
  * @version 24/10/2017,22:54
- * @see
  */
 public final class RatioImageView extends ImageView {
     public RatioImageView(Context context) {

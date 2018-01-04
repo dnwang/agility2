@@ -8,7 +8,6 @@ package org.pinwheel.agility2.view;
  *
  * @author dnwang
  * @version 2016/12/15,12:32
- * @see
  */
 public interface IIndicator {
 

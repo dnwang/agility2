@@ -116,7 +116,6 @@ public class PhotoPicker {
                 } else {
                     uri = Uri.fromFile(outFile);
                 }
-                // intent中指定路径，否则随intent中返回的数据是被压缩过后的
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
                 activity.startActivityForResult(intent, CODE_TAKE_PHOTO);
                 tmpFile = outFile;
@@ -148,7 +147,6 @@ public class PhotoPicker {
                     Uri uri = getUri(activity, data);
                     Cursor cursor = null;
                     try {
-                        // 先从数据库中获取URI对应的路径
                         String[] filePathColumns = {MediaStore.Images.Media.DATA};
                         cursor = activity.getContentResolver().query(uri, filePathColumns, null, null, null);
                         if (cursor != null && cursor.moveToFirst()) {

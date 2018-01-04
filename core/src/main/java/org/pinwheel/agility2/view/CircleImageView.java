@@ -187,6 +187,7 @@ public class CircleImageView extends ImageView {
     }
 
     /**
+     * @param borderColorRes color
      * @deprecated Use {@link #setBorderColor(int)} instead
      */
     @Deprecated

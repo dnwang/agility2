@@ -22,7 +22,6 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author dnwang
  * @version 2017/8/29,9:05
- * @see
  */
 public final class GZipFilter extends Converter.Filter {
 

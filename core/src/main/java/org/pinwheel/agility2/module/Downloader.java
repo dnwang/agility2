@@ -42,7 +42,6 @@ public final class Downloader implements Runnable {
 
     public Downloader fromUrl(String fromUrl) {
         if (!CommonTools.isEmpty(fromUrl)) {
-            // 处理中文和空格
             fromUrl = fromUrl.trim();
             final String resName = fromUrl.substring(Math.min(fromUrl.length() - 1, fromUrl.lastIndexOf("/") + 1));
             if (!CommonTools.isEmpty(resName)) {

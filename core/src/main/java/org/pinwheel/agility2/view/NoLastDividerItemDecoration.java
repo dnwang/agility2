@@ -22,7 +22,6 @@ import org.pinwheel.agility2.utils.CommonTools;
  *
  * @author dnwang
  * @version 2017/6/20,11:02
- * @see
  */
 public class NoLastDividerItemDecoration extends RecyclerView.ItemDecoration {
 
@@ -45,6 +44,8 @@ public class NoLastDividerItemDecoration extends RecyclerView.ItemDecoration {
     /**
      * Creates a divider {@link RecyclerView.ItemDecoration} that can be used with a
      * {@link LinearLayoutManager}.
+     *
+     * @param drawable drawable
      */
     public NoLastDividerItemDecoration(@NonNull Drawable drawable) {
         mDivider = drawable;
@@ -64,6 +65,7 @@ public class NoLastDividerItemDecoration extends RecyclerView.ItemDecoration {
      * {@link RecyclerView.LayoutManager} changes orientation.
      *
      * @param orientation {@link #HORIZONTAL} or {@link #VERTICAL}
+     * @return obj
      */
     public NoLastDividerItemDecoration setOrientation(int orientation) {
         if (orientation != HORIZONTAL && orientation != VERTICAL) {

@@ -10,7 +10,6 @@ import java.io.Serializable;
  *
  * @author dnwang
  * @version 03/03/2017,22:13
- * @see
  */
 public class Packet implements Serializable {
 

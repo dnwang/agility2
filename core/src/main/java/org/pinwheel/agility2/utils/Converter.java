@@ -20,7 +20,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author dnwang
  * @version 2017/8/24,16:36
- * @see
  */
 public final class Converter {
 

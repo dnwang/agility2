@@ -29,7 +29,6 @@ import android.view.animation.OvershootInterpolator;
  *
  * @author dnwang
  * @version 2017/12/01,9:59
- * @see
  */
 public class DraggableBubbleView extends View {
 
@@ -87,7 +86,7 @@ public class DraggableBubbleView extends View {
     private OnSplitListener listener;
 
     private void init(AttributeSet attrs) {
-        setEllipsisText(null);// 默认超过最大 显示为小红点
+        setEllipsisText(null);
         bgPaint = new Paint();
         bgPaint.setAntiAlias(true);
         txtPaint = new Paint();
@@ -191,20 +190,12 @@ public class DraggableBubbleView extends View {
         return this;
     }
 
-    /**
-     * 开关 超过最大数值显示 省略符
-     */
     public DraggableBubbleView showEllipsis(boolean is) {
         this.isShowEllipsis = is;
         invalidate();
         return this;
     }
 
-    /**
-     * 省略符 文本
-     *
-     * @param text null: 小红点样式
-     */
     public DraggableBubbleView setEllipsisText(String text) {
         final boolean onlyPointer = TextUtils.isEmpty(text);
         this.originalEllipsisRadius = onlyPointer ? originalCenterRadius : originalPointRadius;
@@ -401,7 +392,7 @@ public class DraggableBubbleView extends View {
         fR = isEllipsis() ? originalEllipsisRadius : originalPointRadius;
     }
 
-    private final static float STRENGTH = 0.04f;// 中心点半径衰减系数
+    private final static float STRENGTH = 0.04f;
     private int maxDistance = 64;// dp
 
     private float cR, fR;
@@ -445,7 +436,6 @@ public class DraggableBubbleView extends View {
     }
 
     private boolean isEllipsis() {
-        // 开启 显示省略符 & 超过最大数目
         return isShowEllipsis && count > maxCount;
     }
 

@@ -10,7 +10,6 @@ import java.util.UUID;
  *
  * @author dnwang
  * @version 2017/2/23,11:08
- * @see
  */
 public class HttpRequest extends HttpPacket {
 

@@ -16,7 +16,6 @@ import java.util.Locale;
  *
  * @author dnwang
  * @version 2016/7/1,16:12
- * @see
  */
 public final class FormatUtils {
 
@@ -43,13 +42,12 @@ public final class FormatUtils {
         }
         final long dTime = (System.currentTimeMillis() - targetTime.getTime()) / 1000;
         if (dTime <= 10 * 60) {
-            return "刚刚";
+            return "now";
         } else if (dTime <= 60 * 60) {
-            return (dTime / 60) + "分钟前";
+            return (dTime / 60) + "minutes ago";
         } else if (dTime <= 24 * 60 * 60) {
-            return (dTime / 3600) + "小时前";
+            return (dTime / 3600) + "hours ago";
         }
-        // 24之后的逻辑继续使用小时判断不准确
         final Calendar currCalendar = Calendar.getInstance();
         final Calendar targetCalendar = Calendar.getInstance();
         targetCalendar.setTime(targetTime);
@@ -63,7 +61,7 @@ public final class FormatUtils {
             }
             return FORMAT_CURRENT_YEAR.format(targetTime);
         } else if (dYear == 1 && currCalendar.get(Calendar.MONTH) == 0
-                && targetCalendar.get(Calendar.MONTH) == 11) {// 去年12月与今年1月
+                && targetCalendar.get(Calendar.MONTH) == 11) {
             currCalendar.add(Calendar.DATE, -1);
             if (currCalendar.get(Calendar.DAY_OF_YEAR) == targetCalendar.get(Calendar.DAY_OF_YEAR)) {
                 return FORMAT_YESTERDAY.format(targetTime);
@@ -106,9 +104,6 @@ public final class FormatUtils {
         }
     }
 
-    /**
-     * 格式化播放时间
-     */
     public static String simplifyPlayTime(long duration) {
         String minuteStr;
         int minute = (int) (duration / 60000);
@@ -127,9 +122,6 @@ public final class FormatUtils {
         return minuteStr + ":" + secondStr;
     }
 
-    /**
-     * 数量 数据格式
-     */
     public static String simplifyCount(long number) {
         DecimalFormat DISTANCE_DECIMAL_FORMAT = new DecimalFormat("0.0");
         new DecimalFormat("0.0").setRoundingMode(RoundingMode.DOWN);

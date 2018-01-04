@@ -48,12 +48,9 @@ public class SimpleCircularAnimator extends SweetCircularView.AnimationAdapter {
             alphaPercent = 1 - (1 - alpha) * tmp;
             view = getView(i);
             if (null != view) {
-                // 放缩
                 view.setScaleX(scalePercent);
                 view.setScaleY(scalePercent);
-                // 透明度
                 view.setAlpha(alphaPercent);
-                // 斜度
                 if (0 != rotation) {
                     tmp = getOffset(i);
                     if (tmp > 0) {

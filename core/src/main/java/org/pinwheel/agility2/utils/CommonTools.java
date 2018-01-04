@@ -51,7 +51,6 @@ import java.util.UUID;
  *
  * @author dnwang
  * @version 2016/7/1,16:12
- * @see
  */
 public final class CommonTools {
 
@@ -292,7 +291,7 @@ public final class CommonTools {
                         || subType == TelephonyManager.NETWORK_TYPE_EVDO_A || subType == TelephonyManager.NETWORK_TYPE_EVDO_0
                         || subType == TelephonyManager.NETWORK_TYPE_EVDO_B) {
                     type = "3G";
-                } else if (subType == TelephonyManager.NETWORK_TYPE_LTE) {// LTE是3g到4g的过渡，是3.9G的全球标准
+                } else if (subType == TelephonyManager.NETWORK_TYPE_LTE) {
                     type = "4G";
                 }
             }
@@ -394,9 +393,6 @@ public final class CommonTools {
         return 0;
     }
 
-    /**
-     * 获取字符串编码格式
-     */
     @Nullable
     public static String getEncoding(String content) {
         if (TextUtils.isEmpty(content)) {
@@ -466,9 +462,6 @@ public final class CommonTools {
         }
     }
 
-    /**
-     * 获取文本的真实长度，中文2；英文1
-     */
     public static int getLength(String string) {
         int valueLength = 0;
         if (!isEmpty(string)) {
@@ -505,9 +498,6 @@ public final class CommonTools {
         return url;
     }
 
-    /**
-     * 字符串标记颜色
-     */
     public static CharSequence markText(@NonNull String raw, String match, @ColorInt int color) {
         match = (null == match) ? "" : match;
         final int start = raw.indexOf(match);

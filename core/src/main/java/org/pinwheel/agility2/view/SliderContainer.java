@@ -22,7 +22,6 @@ import java.util.List;
  *
  * @author dnwang
  * @version 03/12/2017,10:22
- * @see
  */
 public final class SliderContainer extends RadioGroup {
 

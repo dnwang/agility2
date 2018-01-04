@@ -89,9 +89,6 @@ public class DragScrollView extends ScrollView implements Draggable {
         }
     }
 
-    /**
-     * 防止scrollView嵌套list，grid，recycler时 始终让最后一个数据获取焦点，导致列表抖动
-     */
     @Override
     protected int computeScrollDeltaToGetChildRectOnScreen(Rect rect) {
         return 0;

@@ -11,7 +11,6 @@ import java.util.Map;
  *
  * @author dnwang
  * @version 2017/2/23,10:59
- * @see
  */
 public class HttpPacket extends Packet {
 
