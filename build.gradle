@@ -9,6 +9,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
+        // jCenter publisher
+        classpath 'com.novoda:bintray-release:0.8.0'
     }
 }
 
@@ -20,12 +22,14 @@ allprojects {
 }
 
 ext {
-    applicationId = 'org.pinwheel.agility2'
+    artifactId = "agility2"
+    groupId = "org.pinwheel"
+    applicationId = "$groupId.$artifactId"
 
-    compileSdkVersion = 26
+    compileSdkVersion = 27
     buildToolsVersion = "27.0.3"
     minSdkVersion = 16
     targetSdkVersion = 27
-    versionCode = 3
-    versionName = "1.0.0"
+    versionCode = 5
+    versionName = "1.0.1"
 }

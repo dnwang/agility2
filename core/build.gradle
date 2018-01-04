@@ -1,4 +1,14 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
+
+publish {
+    userOrg = 'pinwheel'
+    groupId = rootProject.ext.groupId
+    artifactId = rootProject.ext.artifactId
+    publishVersion = rootProject.ext.versionName
+    desc = 'Android universal tools'
+    website = 'https://github.com/dnwang/agility2.git'
+}
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -8,6 +18,10 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
+    }
+
+    lintOptions {
+        abortOnError false
     }
 }
 
