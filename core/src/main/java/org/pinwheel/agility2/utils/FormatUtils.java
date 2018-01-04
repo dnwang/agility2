@@ -42,11 +42,11 @@ public final class FormatUtils {
         }
         final long dTime = (System.currentTimeMillis() - targetTime.getTime()) / 1000;
         if (dTime <= 10 * 60) {
-            return "now";
+            return "刚刚";
         } else if (dTime <= 60 * 60) {
-            return (dTime / 60) + "minutes ago";
+            return (dTime / 60) + "分钟前";
         } else if (dTime <= 24 * 60 * 60) {
-            return (dTime / 3600) + "hours ago";
+            return (dTime / 3600) + "小时前";
         }
         final Calendar currCalendar = Calendar.getInstance();
         final Calendar targetCalendar = Calendar.getInstance();
