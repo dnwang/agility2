@@ -36,7 +36,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collection;
@@ -106,42 +105,40 @@ public final class CommonTools {
         return activity;
     }
 
-    public static Activity finishAllActivities() {
+    @UiThread
+    public static boolean finishAllActivities() {
         try {
-            Class activityThreadClass = Class.forName("android.app.ActivityThread");
-            Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
-            Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
-            activitiesField.setAccessible(true);
-            Map activities = (Map) activitiesField.get(activityThread);
+            final Object activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
+                    "currentActivityThread");
+            final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
             for (Object activityRecord : activities.values()) {
-                Class activityRecordClass = activityRecord.getClass();
-                Field activityField = activityRecordClass.getDeclaredField("activity");
-                activityField.setAccessible(true);
-                ((Activity) activityField.get(activityRecord)).finish();
+                Activity activity = FieldUtils.getFieldValue(activityRecord, "activity");
+                activity.finish();
             }
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-        return null;
     }
 
     public static String getVersionName(Context context) {
-        PackageManager manager = context.getPackageManager();
         try {
+            PackageManager manager = context.getPackageManager();
             PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
             return info.versionName;
-        } catch (PackageManager.NameNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
     public static int getVersionCode(Context context) {
-        PackageManager manager = context.getPackageManager();
         try {
+            PackageManager manager = context.getPackageManager();
             PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
             return info.versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return 0;
         }

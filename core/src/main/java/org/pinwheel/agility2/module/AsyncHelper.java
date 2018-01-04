@@ -31,6 +31,20 @@ public enum AsyncHelper {
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Map<String, Task> tasks = new ConcurrentHashMap<>();
 
+    public String delay(long interval, final Runnable runnable) {
+        if (null == runnable) {
+            throw new IllegalStateException("task params error !");
+        }
+        return specific(2, interval, new Action1<Integer>() {
+            @Override
+            public void call(Integer count) {
+                if (2 == count) {
+                    runnable.run();
+                }
+            }
+        });
+    }
+
     public String once(final Runnable runnable) {
         if (null == runnable) {
             throw new IllegalStateException("task params error !");

@@ -1,24 +1,25 @@
 package org.pinwheel.demo;
 
-import android.app.Activity;
-import android.app.Application;
-
+import org.pinwheel.agility2.module.AsyncHelper;
 import org.pinwheel.agility2.utils.CommonTools;
-import org.pinwheel.agility2.utils.LogUtils;
 
 public final class MainActivity extends AbsTesterActivity {
 
     private static final String FILE_AUTHORITIES = "org.pinwheel.agility2.fileprovider";
 
-    @Tester(title = "tester")
+    @Tester(title = "finish all activities")
     void tester() {
-        // TODO: 30/12/2017
-        Application app = CommonTools.getApplication();
-        Activity activity = CommonTools.getTopActivity();
+        CommonTools.finishAllActivities();
+    }
 
-        LogUtils.d(app);
-        LogUtils.d("---------------------");
-        LogUtils.d(activity);
+    @Tester(title = "delay")
+    void tester2() {
+        AsyncHelper.INSTANCE.delay(2000, new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("delay complete !!");
+            }
+        });
     }
 
 }
