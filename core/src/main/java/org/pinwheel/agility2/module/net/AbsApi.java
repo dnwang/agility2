@@ -64,18 +64,23 @@ public class AbsApi<T> {
             properties = new HashMap<>();
         }
         properties.putAll(FieldUtils.obj2Map(this));
-        properties.remove("$change");
-        properties.remove("serialVersionUID");
-        properties.remove("shadow$_monitor_");
-        properties.remove("shadow$_klass_");
         final Gson gson = new GsonBuilder().create();
         final Map<String, String> params = new HashMap<>();
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            Object obj = entry.getValue();
-            if (obj instanceof String) {
-                params.put(entry.getKey(), (String) obj);
-            } else if (null != obj) {
-                params.put(entry.getKey(), gson.toJson(obj));
+            final String key = entry.getKey();
+            if (key.contains("$")) {
+                // system params
+                continue;
+            }
+            final Object value = entry.getValue();
+            if (value instanceof String) {
+                params.put(key, (String) value);
+            } else {
+                if (null != value) {
+                    params.put(key, gson.toJson(value));
+                } else {
+                    params.put(key, "");
+                }
             }
         }
         return params;
