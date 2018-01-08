@@ -112,12 +112,7 @@ public final class FileUtils {
             return false;
         }
         if (includeRootDir) {
-            return zip(fromPath.getParentFile(), toFile, false, new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return file.getAbsolutePath().equals(fromPath.getAbsolutePath()) || ((null != filter) && filter.accept(file));
-                }
-            });
+            return zip(fromPath.getParentFile(), toFile, false, new SubFileFilter(fromPath, filter));
         }
         boolean result = false;
         delete(toFile);
@@ -125,9 +120,14 @@ public final class FileUtils {
         ZipOutputStream stream = null;
         try {
             stream = new ZipOutputStream(new FileOutputStream(toFile));
-            File[] files = (null == filter) ? fromPath.listFiles() : fromPath.listFiles(filter);
-            for (File tmp : files) {
-                zipFile(fromPath, tmp.getName(), stream);
+            if (null != filter && filter instanceof SubFileFilter) {
+                final SubFileFilter subFileFilter = (SubFileFilter) filter;
+                zipFile(fromPath, subFileFilter.root.getName(), stream, subFileFilter.filter);
+            } else {
+                File[] files = (null == filter) ? fromPath.listFiles() : fromPath.listFiles(filter);
+                for (File tmp : files) {
+                    zipFile(fromPath, tmp.getName(), stream, filter);
+                }
             }
             result = true;
         } catch (Exception e) {
@@ -138,7 +138,7 @@ public final class FileUtils {
         return result;
     }
 
-    private static void zipFile(final File root, final String relativeName, final ZipOutputStream zipOutStream) throws IOException {
+    private static void zipFile(final File root, final String relativeName, final ZipOutputStream zipOutStream, FileFilter filter) throws IOException {
         File file = new File(root, relativeName);
         if (file.isFile()) {
             ZipEntry entry = new ZipEntry(relativeName);
@@ -152,16 +152,31 @@ public final class FileUtils {
             inStream.close();
             zipOutStream.closeEntry();
         } else if (file.isDirectory()) {
-            File[] files = file.listFiles();
+            File[] files = (null == filter) ? file.listFiles() : file.listFiles(filter);
             if (files.length < 1) {
                 ZipEntry entry = new ZipEntry(relativeName + File.separator);
                 zipOutStream.putNextEntry(entry);
                 zipOutStream.closeEntry();
             } else {
                 for (File tmp : files) {
-                    zipFile(root, relativeName + File.separator + tmp.getName(), zipOutStream);
+                    zipFile(root, relativeName + File.separator + tmp.getName(), zipOutStream, filter);
                 }
             }
+        }
+    }
+
+    private static class SubFileFilter implements FileFilter {
+        File root;
+        FileFilter filter;
+
+        SubFileFilter(File root, FileFilter filter) {
+            this.root = root;
+            this.filter = filter;
+        }
+
+        @Override
+        public boolean accept(File file) {
+            return null == filter || filter.accept(file);
         }
     }
 
