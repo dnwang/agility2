@@ -3,13 +3,12 @@ package org.pinwheel.agility2.utils;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import org.pinwheel.agility2.action.Action3;
-import org.pinwheel.agility2.action.Function3;
+import org.pinwheel.agility2.action.Function1;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -23,77 +22,85 @@ import java.util.Map;
  */
 public final class DynamicProxy implements InvocationHandler {
 
-    private final Map<String, Function3<Boolean, Object, Method, Object[]>> funcMaps;
+    private final Map<String, Function1<Object, Caller>> filters;
     private final Object target;
 
     public DynamicProxy(@NonNull Object target) {
         this.target = target;
-        this.funcMaps = new HashMap<>();
+        this.filters = new LinkedHashMap<>();
     }
 
-    private Object handler;
-
-    public <T> T getHandler() {
-        if (null == handler) {
-            handler = Proxy.newProxyInstance(getClass().getClassLoader(),
-                    target.getClass().getInterfaces(),
-                    this);
-        }
-        return (T) handler;
-    }
-
-    public <T> T getHandler(Class<T> type) {
-        return getHandler();
-    }
-
-    public DynamicProxy add(@NonNull String method, @NonNull final Action3<Object, Method, Object[]> action) {
-        return add(method, new Function3<Boolean, Object, Method, Object[]>() {
-            @Override
-            public Boolean call(Object target, Method func, Object[] args) {
-                action.call(target, func, args);
-                return false;
-            }
-        });
-    }
-
-    public DynamicProxy add(@NonNull String method, @NonNull Function3<Boolean, Object, Method, Object[]> function) {
-        if (!funcMaps.containsKey(method)) {
-            funcMaps.put(method, function);
-        }
-        return this;
-    }
-
-    public DynamicProxy remove(@NonNull String method) {
-        if (funcMaps.containsKey(method)) {
-            funcMaps.remove(method);
-        }
-        return this;
-    }
-
-    public boolean contains(@NonNull String method) {
-        return funcMaps.containsKey(method);
+    public <T> T create() {
+        final Object proxy = Proxy.newProxyInstance(getClass().getClassLoader(),
+                target.getClass().getInterfaces(),
+                this);
+        return (T) proxy;
     }
 
     /**
      * proxy all when method is empty
      */
+    public DynamicProxy add(@NonNull String method, @NonNull Function1<Object, Caller> filter) {
+        if (!contains(method)) {
+            filters.put(method, filter);
+        }
+        return this;
+    }
+
+    public DynamicProxy remove(@NonNull String method) {
+        if (contains(method)) {
+            filters.remove(method);
+        }
+        return this;
+    }
+
+    public DynamicProxy clear() {
+        filters.clear();
+        return this;
+    }
+
+    public boolean contains(@NonNull String method) {
+        return filters.containsKey(method);
+    }
+
     @Override
-    public Object invoke(Object o, Method func, Object[] args) throws Throwable {
-        boolean pResult0 = false;
-        boolean pResult1 = false;
-        for (Map.Entry<String, Function3<Boolean, Object, Method, Object[]>> entry : funcMaps.entrySet()) {
-            String pMethod = entry.getKey();
-            if (TextUtils.isEmpty(pMethod)) {
-                // globe
-                pResult0 = entry.getValue().call(target, func, args);
-            } else if (pMethod.equalsIgnoreCase(func.getName())) {
-                pResult1 = entry.getValue().call(target, func, args);
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        final Caller caller = new Caller(target, method, args);
+        for (Map.Entry<String, Function1<Object, Caller>> entry : filters.entrySet()) {
+            final String key = entry.getKey();
+            final Function1<Object, Caller> filter = entry.getValue();
+            if (TextUtils.isEmpty(key) || key.equals(method.getName())) {
+                caller.result = filter.call(caller);
             }
         }
-        if (!pResult0 && !pResult1) {
-            return func.invoke(target, args);
-        } else {
+        return caller.result;
+    }
+
+    public static final class Caller {
+        public final Object owner;
+        public final Method method;
+        public final Object[] args;
+
+        private Object result = null;
+
+        private Caller(Object owner, Method method, Object[] args) {
+            this.owner = owner;
+            this.method = method;
+            this.args = args;
+        }
+
+        public final Object invoke() {
+            return invoke(args);
+        }
+
+        public final Object invoke(Object[] args) {
+            try {
+                return method.invoke(owner, args);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }
+
 }
