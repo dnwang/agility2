@@ -14,6 +14,8 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.StatFs;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
@@ -118,6 +120,17 @@ public final class CommonTools {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public static void runOnUiThread(Runnable runnable) {
+        if (null == runnable) {
+            return;
+        }
+        if (Looper.getMainLooper() != Looper.myLooper()) {
+            new Handler(Looper.getMainLooper()).post(runnable);
+        } else {
+            runnable.run();
         }
     }
 

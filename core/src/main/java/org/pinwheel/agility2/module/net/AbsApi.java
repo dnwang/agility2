@@ -118,6 +118,8 @@ public class AbsApi<T> {
         return this;
     }
 
+    private Converter converter;
+
     public final T getRespObj() {
         final AbsResp<T> resp = getResp();
         return (null != resp) ? resp.obj : null;
@@ -128,7 +130,7 @@ public class AbsApi<T> {
         if (null == filters || filters.isEmpty()) {
             throw new RuntimeException("Please return special filter list by 'getFilters' method !");
         }
-        final Converter converter = new Converter();
+        converter = new Converter();
         final int size = filters.size();
         for (int i = 0; i < size; i++) {
             try {
@@ -137,7 +139,8 @@ public class AbsApi<T> {
                 e.printStackTrace();
             }
         }
-        Object obj = converter.onProgress(progressAction).execute(this);
+        final Object obj = converter.onProgress(progressAction).execute(this);
+        converter = null;
         return (null != obj) ? (AbsResp) obj : null;
     }
 
@@ -155,6 +158,9 @@ public class AbsApi<T> {
             @Override
             public void call(AbsResp<T> resp) {
                 if ((null == activity || !activity.isFinishing()) && null != completeAction) {
+                    if (isCanceled()) {
+                        completeAction.call(null, -99998, null);
+                    }
                     if (null != resp) {
                         completeAction.call(resp.obj, resp.getCode(), resp.getError());
                     } else {
@@ -168,6 +174,9 @@ public class AbsApi<T> {
 
     public final AbsApi<T> cancel() {
         this.isCanceled = true;
+        if (null != converter) {
+            converter.cancel();
+        }
         return this;
     }
 
