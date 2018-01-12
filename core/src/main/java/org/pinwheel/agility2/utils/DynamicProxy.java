@@ -37,9 +37,6 @@ public final class DynamicProxy implements InvocationHandler {
         return (T) proxy;
     }
 
-    /**
-     * proxy all when method is empty
-     */
     public DynamicProxy add(@NonNull String method, @NonNull Function1<Object, Caller> filter) {
         if (!contains(method)) {
             filters.put(method, filter);
