@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
@@ -18,10 +19,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
 import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.telephony.TelephonyManager;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -520,6 +523,15 @@ public final class CommonTools {
                     Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         }
         return ssb;
+    }
+
+    public static Drawable tint(@DrawableRes int resId, int color) {
+        return tint(getApplication().getResources().getDrawable(resId).mutate(), color);
+    }
+
+    public static Drawable tint(@NonNull Drawable drawable, int color) {
+        DrawableCompat.setTintList(drawable, ColorStateList.valueOf(color));
+        return drawable;
     }
 
 }
