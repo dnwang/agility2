@@ -49,6 +49,8 @@ public enum ActivityRouter {
 
     private static final String TAG = ActivityRouter.class.getSimpleName();
 
+    private static final String SCHEME = "router";
+
     public static void init(Context ctx) {
         INSTANCE.pathMaps.clear();
         try {
@@ -76,9 +78,10 @@ public enum ActivityRouter {
     }
 
     public static LaunchTaskGroup build(@NonNull Uri uri) {
+        final String scheme = uri.getScheme();
         final List<String> pathSegments = uri.getPathSegments();
         final int size = pathSegments.size();
-        if (size > 0) {
+        if (SCHEME.equals(scheme) && size > 0) {
             Bundle args = null;
             final Set<String> paramKeys = uri.getQueryParameterNames();
             if (paramKeys.size() > 0) {
