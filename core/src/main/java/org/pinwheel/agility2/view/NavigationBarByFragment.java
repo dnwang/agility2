@@ -179,8 +179,4 @@ public final class NavigationBarByFragment implements ViewPager.OnPageChangeList
         return -1;
     }
 
-    public interface Selectable {
-        void onSelected(boolean isSelected);
-    }
-
 }

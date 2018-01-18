@@ -151,8 +151,4 @@ public final class NavigationBar implements ViewPager.OnPageChangeListener {
         return -1;
     }
 
-    public interface Selectable {
-        void onSelected(boolean isSelected);
-    }
-
 }
