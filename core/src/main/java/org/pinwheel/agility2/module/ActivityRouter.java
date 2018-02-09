@@ -87,7 +87,7 @@ public enum ActivityRouter {
             if (paramKeys.size() > 0) {
                 args = new Bundle();
                 for (String key : paramKeys) {
-                    args.putString(key, uri.getQueryParameter(key));
+                    args.putString(key, CommonTools.urlDecode(uri.getQueryParameter(key)));
                 }
             }
             final LaunchTask[] tasks = new LaunchTask[pathSegments.size()];
