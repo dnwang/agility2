@@ -2,6 +2,7 @@ package org.pinwheel.agility2.module;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.pinwheel.agility2.action.Action1;
@@ -12,7 +13,12 @@ import org.pinwheel.agility2.utils.CommonTools;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Copyright (C), 2017 <br>
@@ -27,7 +33,30 @@ public enum AsyncHelper {
 
     INSTANCE;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+    private final int KEEP_ALIVE_TIME = 1;
+
+    private final ExecutorService executor = new ThreadPoolExecutor(
+            NUMBER_OF_CORES,
+            NUMBER_OF_CORES * 2,
+            KEEP_ALIVE_TIME,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            new ThreadFactory() {
+                private final AtomicInteger mCount = new AtomicInteger(1);
+
+                @Override
+                public Thread newThread(@NonNull Runnable r) {
+                    return new Thread(r, "AsyncHelper #" + mCount.getAndIncrement());
+                }
+            },
+            new RejectedExecutionHandler() {
+                @Override
+                public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+
+                }
+            }
+    );
     private final Map<String, Task> tasks = new ConcurrentHashMap<>();
 
     public String delay(long interval, final Runnable runnable) {

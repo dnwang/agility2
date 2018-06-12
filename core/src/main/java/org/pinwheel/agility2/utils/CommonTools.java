@@ -148,6 +148,10 @@ public final class CommonTools {
         }
     }
 
+    public static String getVersionName() {
+        return getVersionName(getApplication());
+    }
+
     public static int getVersionCode(Context context) {
         try {
             PackageManager manager = context.getPackageManager();
@@ -157,6 +161,10 @@ public final class CommonTools {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    public static int getVersionCode() {
+        return getVersionCode(getApplication());
     }
 
     public static String randomUUID() {

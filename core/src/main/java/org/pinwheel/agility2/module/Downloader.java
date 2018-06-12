@@ -40,7 +40,7 @@ public final class Downloader implements Runnable {
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
-    public Downloader fromUrl(String fromUrl) {
+    public Downloader fromUrlWithEncode(String fromUrl) {
         if (!CommonTools.isEmpty(fromUrl)) {
             fromUrl = fromUrl.trim();
             final String resName = fromUrl.substring(Math.min(fromUrl.length() - 1, fromUrl.lastIndexOf("/") + 1));
@@ -49,6 +49,10 @@ public final class Downloader implements Runnable {
                 fromUrl = fromUrl.replace(resName, encodeResName).replace("+", "%20");
             }
         }
+        return fromUrl(fromUrl);
+    }
+
+    public Downloader fromUrl(String fromUrl) {
         this.fromUrl = fromUrl;
         return this;
     }
