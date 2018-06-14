@@ -2,6 +2,7 @@ package org.pinwheel.agility2.utils;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.ActivityOptions;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -30,10 +31,12 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Function1;
 import org.pinwheel.agility2.view.ViewHolder;
 
@@ -43,6 +46,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +142,9 @@ public final class CommonTools {
     }
 
     public static String getVersionName(Context context) {
+        if (null == context) {
+            return null;
+        }
         try {
             PackageManager manager = context.getPackageManager();
             PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
@@ -153,6 +160,9 @@ public final class CommonTools {
     }
 
     public static int getVersionCode(Context context) {
+        if (null == context) {
+            return 0;
+        }
         try {
             PackageManager manager = context.getPackageManager();
             PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
@@ -540,6 +550,41 @@ public final class CommonTools {
     public static Drawable tint(@NonNull Drawable drawable, int color) {
         DrawableCompat.setTintList(drawable, ColorStateList.valueOf(color));
         return drawable;
+    }
+
+    public static void printTime(String tag, Action0 action) {
+        long begin = System.currentTimeMillis();
+        action.call();
+        if (TextUtils.isEmpty(tag)) {
+            LogUtils.d("printTime >> " + (System.currentTimeMillis() - begin) + "ms");
+        } else {
+            LogUtils.d("printTime >> [" + tag + "]: " + (System.currentTimeMillis() - begin) + "ms");
+        }
+    }
+
+    public static Bundle createTransitionBundle(View transitionView) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return null;
+        }
+        if (null == transitionView) {
+            return null;
+        }
+        final Activity topActivity = CommonTools.getTopActivity();
+        if (null == topActivity) {
+            return null;
+        }
+        final List<Pair<View, String>> pairs = new ArrayList<>();
+        CommonTools.foreachViews(transitionView, new Function1<Boolean, View>() {
+            @Override
+            public Boolean call(View child) {
+                final String name = child.getTransitionName();
+                if (!TextUtils.isEmpty(name)) {
+                    pairs.add(new Pair<>(child, name));
+                }
+                return true;
+            }
+        });
+        return ActivityOptions.makeSceneTransitionAnimation(topActivity, pairs.toArray(new Pair[]{})).toBundle();
     }
 
 }

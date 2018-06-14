@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.view.View;
 
 import org.pinwheel.agility2.action.Action1;
 import org.pinwheel.agility2.action.Function1;
@@ -187,6 +188,10 @@ public enum ActivityRouter {
     }
 
     public void start(final LaunchTask... tasks) {
+        start(null, tasks);
+    }
+
+    public void start(final Bundle bundle, final LaunchTask... tasks) {
         if (null == tasks || 0 == tasks.length) {
             return;
         }
@@ -194,7 +199,7 @@ public enum ActivityRouter {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
-                    start(tasks);
+                    start(bundle, tasks);
                 }
             });
             return;
@@ -202,9 +207,13 @@ public enum ActivityRouter {
         final Context ctx = CommonTools.getTopActivity();
         if (null != ctx) {
             if (1 == tasks.length) {
-                Intent intent = createIntent(ctx, tasks[0]);
+                final Intent intent = createIntent(ctx, tasks[0]);
                 if (!executeFilters(intent)) {
-                    ctx.startActivity(intent);
+                    if (null != bundle) {
+                        ctx.startActivity(intent, bundle);
+                    } else {
+                        ctx.startActivity(intent);
+                    }
                 }
             } else {
                 Intent[] intents = new Intent[tasks.length];
@@ -219,7 +228,11 @@ public enum ActivityRouter {
                     intents = Arrays.copyOf(intents, i);
                 }
                 if (intents.length > 0) {
-                    ctx.startActivities(intents);
+                    if (null != bundle) {
+                        ctx.startActivities(intents, bundle);
+                    } else {
+                        ctx.startActivities(intents);
+                    }
                 }
             }
         }
@@ -290,8 +303,16 @@ public enum ActivityRouter {
             return this;
         }
 
+        public void start(Bundle bundle) {
+            INSTANCE.start(bundle, this);
+        }
+
         public void start() {
-            INSTANCE.start(this);
+            start((Bundle) null);
+        }
+
+        public void start(View transitionView) {
+            start(CommonTools.createTransitionBundle(transitionView));
         }
     }
 
@@ -302,8 +323,16 @@ public enum ActivityRouter {
             this.tasks = tasks;
         }
 
+        public void start(Bundle bundle) {
+            INSTANCE.start(bundle, tasks);
+        }
+
         public void start() {
-            INSTANCE.start(tasks);
+            start((Bundle) null);
+        }
+
+        public void start(View transitionView) {
+            start(CommonTools.createTransitionBundle(transitionView));
         }
     }
 

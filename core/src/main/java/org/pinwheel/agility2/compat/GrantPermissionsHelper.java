@@ -73,6 +73,9 @@ public final class GrantPermissionsHelper {
             return;
         }
         final String permissionsKey = getStringArrayMD5(permissions);
+        if (null == permissionsKey) {
+            return;
+        }
         Set<Action1<Boolean>> callbackList = callbackMap.get(permissionsKey);
         if (null != callbackList && !callbackList.isEmpty()) {
             int sizeOfGrantPermissions = 0;
@@ -108,7 +111,9 @@ public final class GrantPermissionsHelper {
     }
 
     private void removeKey(String key) {
-        callbackMap.remove(key);
+        if (null != key) {
+            callbackMap.remove(key);
+        }
     }
 
     private static String getStringArrayMD5(String[] array) {
