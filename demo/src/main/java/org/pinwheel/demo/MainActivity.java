@@ -1,12 +1,16 @@
 package org.pinwheel.demo;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.utils.CommonTools;
+import org.pinwheel.agility2.utils.LogUtils;
 
 public final class MainActivity extends AbsTesterActivity {
 
@@ -29,6 +33,29 @@ public final class MainActivity extends AbsTesterActivity {
         });
         final FrameLayout container = (FrameLayout) getWindow().getDecorView();
         container.addView(image, -1, -1);
+    }
+
+    @Tester(title = "start activity")
+    void test3() {
+        LogUtils.setEnable(true);
+        CommonTools.printTime("get activity", new Action0() {
+            @Override
+            public void call() {
+                final Context ctx = CommonTools.getTopActivity();
+                if (null == ctx) {
+                    LogUtils.d("--------> null");
+                }
+            }
+        });
+        CommonTools.printTime("starer", new Action0() {
+            @Override
+            public void call() {
+//                ActivityRouter.build(MainActivity.class).start();
+                Intent intent = new Intent(MainActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
     }
 
 }

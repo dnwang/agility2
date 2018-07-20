@@ -11,7 +11,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -46,13 +45,16 @@ public final class FieldUtils {
 
     @Nullable
     public static <T> T getFieldValue(Object obj, String fieldName) {
+        if (null == obj || TextUtils.isEmpty(fieldName)) {
+            return null;
+        }
         Field field = getField(obj.getClass(), fieldName);
         if (null != field) {
             field.setAccessible(true);
             try {
                 Object result = field.get(obj);
                 return (null != result) ? (T) result : null;
-            } catch (IllegalAccessException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -68,7 +70,7 @@ public final class FieldUtils {
         do {
             try {
                 field = cls.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException ignore) {
+            } catch (Exception ignore) {
             }
             if (null != field) {
                 break;
@@ -79,7 +81,7 @@ public final class FieldUtils {
 
     @Nullable
     public static <T> T invokeMethod(Object obj, String methodName, Object... args) {
-        if (null == obj) {
+        if (null == obj || TextUtils.isEmpty(methodName)) {
             return null;
         }
         final Class<?>[] types = new Class[args.length];
@@ -97,9 +99,7 @@ public final class FieldUtils {
             try {
                 Object result = method.invoke(obj, args);
                 return (null != result) ? (T) result : null;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -108,7 +108,7 @@ public final class FieldUtils {
 
     @Nullable
     public static <T> T invokeStaticMethod(Class<?> cls, String methodName, Object... args) {
-        if (null == cls) {
+        if (null == cls || TextUtils.isEmpty(methodName)) {
             return null;
         }
         final Class<?>[] types = new Class[args.length];
@@ -126,9 +126,7 @@ public final class FieldUtils {
             try {
                 Object result = method.invoke(null, args);
                 return (null != result) ? (T) result : null;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -144,7 +142,7 @@ public final class FieldUtils {
         do {
             try {
                 method = cls.getDeclaredMethod(methodName, parameterTypes);
-            } catch (NoSuchMethodException ignore) {
+            } catch (Exception ignore) {
             }
             if (null != method) {
                 break;
@@ -161,7 +159,7 @@ public final class FieldUtils {
                 try {
                     field.setAccessible(true);
                     values.put(field.getName(), field.get(obj));
-                } catch (IllegalAccessException ignore) {
+                } catch (Exception ignore) {
                 }
             }
         }
@@ -224,7 +222,7 @@ public final class FieldUtils {
                     try {
                         field.setAccessible(true);
                         params.put(field.getName(), field.get(obj));
-                    } catch (IllegalAccessException ignore) {
+                    } catch (Exception ignore) {
                     }
                 }
             }
@@ -251,7 +249,7 @@ public final class FieldUtils {
                     try {
                         field.setAccessible(true);
                         params.put(field.getName(), field.get(obj));
-                    } catch (IllegalAccessException ignore) {
+                    } catch (Exception ignore) {
                     }
                 }
             }

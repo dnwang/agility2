@@ -67,15 +67,15 @@ public final class CommonTools {
         throw new AssertionError();
     }
 
-    private static WeakReference<Application> appReference;
+    private static WeakReference<Application> appRef;
 
     public static Application getApplication() {
-        Application application = (null != appReference) ? appReference.get() : null;
+        Application application = (null != appRef) ? appRef.get() : null;
         if (null == application) {
             try {
                 application = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
                         "currentApplication");
-                appReference = new WeakReference<>(application);
+                appRef = new WeakReference<>(application);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -86,48 +86,74 @@ public final class CommonTools {
     @UiThread
     public static Activity getTopActivity() {
         Activity activity = null;
-        try {
-            // currentActivityThread must be run in uiThread
-            final Object activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
-                    "currentActivityThread");
+        Object activityThread = (null == activityThreadRef) ? null : activityThreadRef.get();
+        if (null == activityThread) {
+            try {
+                // currentActivityThread must be run in uiThread
+                activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
+                        "currentActivityThread");
+                activityThreadRef = new WeakReference<>(activityThread);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (null != activityThread) {
             final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
-            for (Object activityRecord : activities.values()) {
-                Activity topObj = FieldUtils.getFieldValue(activityRecord, "activity");
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    Boolean isTop = FieldUtils.invokeMethod(topObj, "isTopOfTask");
-                    if (null != isTop && isTop) {
-                        activity = topObj;
-                        break;
+            if (null != activities) {
+                for (Object activityRecord : activities.values()) {
+                    if (null == activityRecord) {
+                        continue;
                     }
-                } else {
-                    Boolean paused = FieldUtils.getFieldValue(activityRecord, "paused");
-                    if (null != paused && !paused) {
-                        activity = topObj;
-                        break;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                            && Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
+                        Activity topObj = FieldUtils.getFieldValue(activityRecord, "activity");
+                        Boolean isTop = FieldUtils.invokeMethod(topObj, "isTopOfTask");
+                        if (null != isTop && isTop) {
+                            activity = topObj;
+                            break;
+                        }
+                    } else {
+                        // default getter
+                        Boolean paused = FieldUtils.getFieldValue(activityRecord, "paused");
+                        if (null != paused && !paused) {
+                            activity = FieldUtils.getFieldValue(activityRecord, "activity");
+                            break;
+                        }
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return activity;
     }
 
+    private static WeakReference activityThreadRef = null;
+
     @UiThread
     public static boolean finishAllActivities() {
-        try {
-            final Object activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
-                    "currentActivityThread");
-            final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
-            for (Object activityRecord : activities.values()) {
-                Activity activity = FieldUtils.getFieldValue(activityRecord, "activity");
-                activity.finish();
+        Object activityThread = (null == activityThreadRef) ? null : activityThreadRef.get();
+        if (null == activityThread) {
+            try {
+                // currentActivityThread must be run in uiThread
+                activityThread = FieldUtils.invokeStaticMethod(Class.forName("android.app.ActivityThread"),
+                        "currentActivityThread");
+                activityThreadRef = new WeakReference<>(activityThread);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
+        if (null != activityThread) {
+            final Map activities = FieldUtils.getFieldValue(activityThread, "mActivities");
+            if (null != activities) {
+                for (Object activityRecord : activities.values()) {
+                    Activity activity = FieldUtils.getFieldValue(activityRecord, "activity");
+                    if (null != activity) {
+                        activity.finish();
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void runOnUiThread(Runnable runnable) {
