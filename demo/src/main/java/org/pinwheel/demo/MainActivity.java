@@ -9,10 +9,19 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import org.pinwheel.agility2.action.Action0;
+import org.pinwheel.agility2.action.Action2;
+import org.pinwheel.agility2.action.Action3;
+import org.pinwheel.agility2.module.Downloader;
 import org.pinwheel.agility2.utils.CommonTools;
 import org.pinwheel.agility2.utils.LogUtils;
 
+import java.io.File;
+
 public final class MainActivity extends AbsTesterActivity {
+
+    static {
+        LogUtils.setEnable(true);
+    }
 
     private static final String FILE_AUTHORITIES = "org.pinwheel.agility2.fileprovider";
 
@@ -37,7 +46,6 @@ public final class MainActivity extends AbsTesterActivity {
 
     @Tester(title = "start activity")
     void test3() {
-        LogUtils.setEnable(true);
         CommonTools.printTime("get activity", new Action0() {
             @Override
             public void call() {
@@ -56,6 +64,35 @@ public final class MainActivity extends AbsTesterActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Tester(title = "Downloader start")
+    void testDownloader() {
+        downloader = new Downloader()
+                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
+                .toFile(new File("/sdcard/downloader.apk"))
+                .onProcess(new Action3<Integer, Integer, Float>() {
+                    @Override
+                    public void call(Integer obj0, Integer obj1, Float obj2) {
+
+                    }
+                })
+                .onComplete(new Action2<Boolean, File>() {
+                    @Override
+                    public void call(Boolean obj0, File obj1) {
+                        LogUtils.d("isSuccess: " + obj0 + ", file: " + obj1);
+                    }
+                })
+                .start();
+    }
+
+    private Downloader downloader = null;
+
+    @Tester(title = "Downloader stop")
+    void testDownloaderStop() {
+        if (null != downloader) {
+            downloader.stop();
+        }
     }
 
 }

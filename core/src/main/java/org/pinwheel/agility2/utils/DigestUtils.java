@@ -1,7 +1,11 @@
 package org.pinwheel.agility2.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.math.BigInteger;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 
 /**
@@ -28,9 +32,9 @@ public final class DigestUtils {
             return null;
         }
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-            messageDigest.update(str.getBytes());
-            return new String(encodeHex(messageDigest.digest()));
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(str.getBytes());
+            return new String(encodeHex(md.digest()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -63,6 +67,24 @@ public final class DigestUtils {
             IOUtils.close(fileReader);
         }
         return null;
+    }
+
+    public static String md5(File file) {
+        String value = null;
+        FileInputStream inStream = null;
+        try {
+            inStream = new FileInputStream(file);
+            MappedByteBuffer byteBuffer = inStream.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(byteBuffer);
+            BigInteger bi = new BigInteger(1, md.digest());
+            value = bi.toString(16);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.close(inStream);
+        }
+        return value;
     }
 
     /**
