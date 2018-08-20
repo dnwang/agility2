@@ -1,9 +1,8 @@
 package org.pinwheel.agility2.module.net.filter;
 
-import android.text.TextUtils;
-
 import org.pinwheel.agility2.module.net.HttpRequest;
 import org.pinwheel.agility2.module.net.HttpResponse;
+import org.pinwheel.agility2.utils.CommonTools;
 import org.pinwheel.agility2.utils.Converter;
 import org.pinwheel.agility2.utils.IOUtils;
 
@@ -32,7 +31,7 @@ public final class GZipFilter extends Converter.Filter {
         }
         final HttpRequest request = (HttpRequest) obj;
         final String encoding = request.getHeader("Accept-Encoding");
-        if (TextUtils.isEmpty(encoding) || !encoding.contains("gzip")) {
+        if (CommonTools.isEmpty(encoding) || !encoding.contains("gzip")) {
             return obj;
         }
         // gzip set body
@@ -58,7 +57,7 @@ public final class GZipFilter extends Converter.Filter {
         }
         final HttpResponse response = (HttpResponse) obj;
         final String encoding = response.getHeader("Content-Encoding");
-        if (TextUtils.isEmpty(encoding) || !encoding.contains("gzip")) {
+        if (CommonTools.isEmpty(encoding) || !encoding.contains("gzip")) {
             return obj;
         }
         // gzip set body

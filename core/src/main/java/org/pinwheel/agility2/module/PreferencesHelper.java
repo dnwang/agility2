@@ -7,7 +7,6 @@ import com.google.gson.Gson;
 
 import org.pinwheel.agility2.utils.CommonTools;
 
-
 /**
  * Copyright (C), 2016 <br>
  * <br>

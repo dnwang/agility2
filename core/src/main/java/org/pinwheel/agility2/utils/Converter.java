@@ -1,8 +1,5 @@
 package org.pinwheel.agility2.utils;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import org.pinwheel.agility2.action.Action1;
 
 import java.util.Collections;
@@ -82,23 +79,10 @@ public final class Converter {
     }
 
     private Action1<Float> progressAction;
-    private Handler mainHandler;
 
     private void dispatchProgress(final float percent) {
         if (null != progressAction) {
-            if (Looper.myLooper() == Looper.getMainLooper()) {
-                progressAction.call(percent);
-            } else {
-                if (null == mainHandler) {
-                    mainHandler = new Handler(Looper.getMainLooper());
-                }
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        progressAction.call(percent);
-                    }
-                });
-            }
+            progressAction.call(percent);
         }
     }
 

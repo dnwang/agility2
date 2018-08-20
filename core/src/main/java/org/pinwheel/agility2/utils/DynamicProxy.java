@@ -1,6 +1,5 @@
 package org.pinwheel.agility2.utils;
 
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.pinwheel.agility2.action.Function1;
@@ -25,7 +24,7 @@ public final class DynamicProxy implements InvocationHandler {
     private final Map<String, Function1<Object, Caller>> filters;
     private final Object target;
 
-    public DynamicProxy(@NonNull Object target) {
+    public DynamicProxy(Object target) {
         this.target = target;
         this.filters = new LinkedHashMap<>();
     }
@@ -37,14 +36,14 @@ public final class DynamicProxy implements InvocationHandler {
         return (T) proxy;
     }
 
-    public DynamicProxy add(@NonNull String method, @NonNull Function1<Object, Caller> filter) {
+    public DynamicProxy add(String method, Function1<Object, Caller> filter) {
         if (!contains(method)) {
             filters.put(method, filter);
         }
         return this;
     }
 
-    public DynamicProxy remove(@NonNull String method) {
+    public DynamicProxy remove(String method) {
         if (contains(method)) {
             filters.remove(method);
         }
@@ -56,7 +55,7 @@ public final class DynamicProxy implements InvocationHandler {
         return this;
     }
 
-    public boolean contains(@NonNull String method) {
+    public boolean contains(String method) {
         return filters.containsKey(method);
     }
 

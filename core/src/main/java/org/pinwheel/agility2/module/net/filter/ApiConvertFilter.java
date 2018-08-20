@@ -1,7 +1,6 @@
 package org.pinwheel.agility2.module.net.filter;
 
 import android.os.Build;
-import android.text.TextUtils;
 
 import org.pinwheel.agility2.module.net.AbsApi;
 import org.pinwheel.agility2.module.net.DELETE;
@@ -68,7 +67,7 @@ public final class ApiConvertFilter extends Converter.Filter {
             final String pairsStr = CommonTools.convertPairsToString(params, "UTF-8");
             params.clear();
             // value pairs in url
-            if (!TextUtils.isEmpty(pairsStr)) {
+            if (!CommonTools.isEmpty(pairsStr)) {
                 if (tmpUrl.contains("?")) {
                     url = tmpUrl.endsWith("?") ? (tmpUrl + pairsStr) : (tmpUrl + "&" + pairsStr);
                 } else {
@@ -120,7 +119,7 @@ public final class ApiConvertFilter extends Converter.Filter {
     }
 
     private static String convertEndpoint(final String endpoint, final Map<String, String> params) {
-        if (!TextUtils.isEmpty(endpoint) && null != params) {
+        if (!CommonTools.isEmpty(endpoint) && null != params) {
             Matcher matcher = Pattern.compile("[{]@(.*?)[}]").matcher(endpoint);
             StringBuffer newEndpoint = new StringBuffer();
             while (matcher.find()) {

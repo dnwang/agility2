@@ -1,8 +1,5 @@
 package org.pinwheel.agility2.module;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
@@ -22,7 +19,6 @@ public enum EventManager {
 
     private final Set<EventReceiver> receiverSet = new HashSet<>();
     private final Queue<Event> eventQueue = new ConcurrentLinkedQueue<>();
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private void handleEvents() {
         if (receiverSet.isEmpty()) {
@@ -35,14 +31,9 @@ public enum EventManager {
 
     private void dispatchEvent(final Event event) {
         if (null != event && null != event.action) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    for (EventReceiver receiver : receiverSet) {
-                        receiver.onReceive(event);
-                    }
-                }
-            });
+            for (EventReceiver receiver : receiverSet) {
+                receiver.onReceive(event);
+            }
         }
     }
 

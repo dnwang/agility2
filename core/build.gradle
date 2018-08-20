@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-    provided "com.android.support:support-v4:$supportVer"
-    provided "com.android.support:recyclerview-v7:$supportVer"
-    provided "com.google.code.gson:gson:$gsonVer"
+    compileOnly "com.android.support:support-v4:$supportVer"
+    compileOnly "com.android.support:recyclerview-v7:$supportVer"
+    compileOnly "com.google.code.gson:gson:$gsonVer"
 }

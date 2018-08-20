@@ -1,6 +1,5 @@
 package org.pinwheel.agility2.module.net.filter;
 
-
 import org.pinwheel.agility2.module.net.HttpRequest;
 import org.pinwheel.agility2.module.net.HttpResponse;
 import org.pinwheel.agility2.utils.Converter;

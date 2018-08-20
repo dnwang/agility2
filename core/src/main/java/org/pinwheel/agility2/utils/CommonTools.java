@@ -21,15 +21,12 @@ import android.os.Looper;
 import android.os.StatFs;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.telephony.TelephonyManager;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.util.Pair;
 import android.view.View;
@@ -453,9 +450,8 @@ public final class CommonTools {
         return 0;
     }
 
-    @Nullable
     public static String getEncoding(String content) {
-        if (TextUtils.isEmpty(content)) {
+        if (isEmpty(content)) {
             return null;
         }
         final String[] formatList = new String[]{
@@ -479,7 +475,7 @@ public final class CommonTools {
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 key = entry.getKey();
                 value = entry.getValue();
-                if (!TextUtils.isEmpty(encode)) {
+                if (!isEmpty(encode)) {
                     try {
                         value = URLEncoder.encode(value, encode);
                     } catch (UnsupportedEncodingException e) {
@@ -511,7 +507,7 @@ public final class CommonTools {
             } else if (obj instanceof String) {
                 String text = (String) obj;
                 text = text.trim();
-                return TextUtils.isEmpty(text) || "null".equalsIgnoreCase(text);
+                return "".equals(text) || "null".equalsIgnoreCase(text);
             } else if (obj instanceof Map) {
                 return ((Map) obj).isEmpty();
             } else if (obj instanceof Bundle) {
@@ -558,7 +554,7 @@ public final class CommonTools {
         return url;
     }
 
-    public static CharSequence markText(@NonNull String raw, String match, @ColorInt int color) {
+    public static CharSequence markText(String raw, String match, @ColorInt int color) {
         match = (null == match) ? "" : match;
         final int start = raw.indexOf(match);
         SpannableStringBuilder ssb = new SpannableStringBuilder(raw);
@@ -573,7 +569,7 @@ public final class CommonTools {
         return tint(getApplication().getResources().getDrawable(resId).mutate(), color);
     }
 
-    public static Drawable tint(@NonNull Drawable drawable, int color) {
+    public static Drawable tint(Drawable drawable, int color) {
         DrawableCompat.setTintList(drawable, ColorStateList.valueOf(color));
         return drawable;
     }
@@ -581,10 +577,10 @@ public final class CommonTools {
     public static void printTime(String tag, Action0 action) {
         long begin = System.currentTimeMillis();
         action.call();
-        if (TextUtils.isEmpty(tag)) {
-            LogUtils.d("printTime >> " + (System.currentTimeMillis() - begin) + "ms");
+        if (isEmpty(tag)) {
+            LogUtils.d("printTime", (System.currentTimeMillis() - begin) + "ms");
         } else {
-            LogUtils.d("printTime >> [" + tag + "]: " + (System.currentTimeMillis() - begin) + "ms");
+            LogUtils.d("printTime", "[" + tag + "]: " + (System.currentTimeMillis() - begin) + "ms");
         }
     }
 
@@ -604,7 +600,7 @@ public final class CommonTools {
             @Override
             public Boolean call(View child) {
                 final String name = child.getTransitionName();
-                if (!TextUtils.isEmpty(name)) {
+                if (!isEmpty(name)) {
                     pairs.add(new Pair<>(child, name));
                 }
                 return true;

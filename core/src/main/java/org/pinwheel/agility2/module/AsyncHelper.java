@@ -2,8 +2,6 @@ package org.pinwheel.agility2.module;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.text.TextUtils;
 
 import org.pinwheel.agility2.action.Action1;
 import org.pinwheel.agility2.action.Function0;
@@ -46,7 +44,7 @@ public enum AsyncHelper {
                 private final AtomicInteger mCount = new AtomicInteger(1);
 
                 @Override
-                public Thread newThread(@NonNull Runnable r) {
+                public Thread newThread(Runnable r) {
                     return new Thread(r, "AsyncHelper #" + mCount.getAndIncrement());
                 }
             },
@@ -155,7 +153,7 @@ public enum AsyncHelper {
     }
 
     public void stopTask(String taskId) {
-        if (!TextUtils.isEmpty(taskId) && tasks.containsKey(taskId)) {
+        if (!CommonTools.isEmpty(taskId) && tasks.containsKey(taskId)) {
             tasks.remove(taskId).stop();
         }
     }

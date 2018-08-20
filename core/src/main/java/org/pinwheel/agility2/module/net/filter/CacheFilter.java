@@ -1,7 +1,5 @@
 package org.pinwheel.agility2.module.net.filter;
 
-import android.text.TextUtils;
-
 import org.pinwheel.agility2.module.net.AbsApi;
 import org.pinwheel.agility2.module.net.HttpRequest;
 import org.pinwheel.agility2.module.net.HttpResponse;
@@ -41,7 +39,7 @@ public final class CacheFilter extends Converter.Filter {
             return obj;
         }
         final String key = api.getCacheKey();
-        if (api.getCacheTimeOut() <= 0 || TextUtils.isEmpty(key)) {
+        if (api.getCacheTimeOut() <= 0 || CommonTools.isEmpty(key)) {
             return obj;
         }
         // find cache
@@ -76,7 +74,7 @@ public final class CacheFilter extends Converter.Filter {
             return obj;
         }
         final String key = api.getCacheKey();
-        if (api.getCacheTimeOut() <= 0 || TextUtils.isEmpty(key)) {
+        if (api.getCacheTimeOut() <= 0 || CommonTools.isEmpty(key)) {
             return obj;
         }
         // save cache
@@ -89,7 +87,7 @@ public final class CacheFilter extends Converter.Filter {
     }
 
     private static File queryCache(String key) {
-        if (!TextUtils.isEmpty(key)) {
+        if (!CommonTools.isEmpty(key)) {
             File cache = new File(PATH, key);
             if (cache.exists()) {
                 return cache;
@@ -99,7 +97,7 @@ public final class CacheFilter extends Converter.Filter {
     }
 
     private static boolean insertCache(String key, HttpResponse response) {
-        if (!TextUtils.isEmpty(key) && null != response) {
+        if (!CommonTools.isEmpty(key) && null != response) {
             File cache = new File(PATH, key);
             FileUtils.delete(cache);
             FileUtils.prepareDirs(cache);

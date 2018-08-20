@@ -2,7 +2,6 @@ package org.pinwheel.agility2.utils;
 
 import android.os.Process;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.File;
@@ -25,6 +24,7 @@ public final class LogUtils {
     private static final String TAG = ">>";
 
     private static boolean enable = false;
+    private static boolean isSystemOut = false;
 
     private LogUtils() {
         throw new AssertionError();
@@ -34,12 +34,16 @@ public final class LogUtils {
         return enable;
     }
 
-    public static void setEnableCrashCaught(@NonNull File outPath) {
+    public static void setEnableCrashCaught(File outPath) {
         Thread.setDefaultUncaughtExceptionHandler(new CrashHandler(outPath));
     }
 
     public static void setEnable(boolean is) {
         enable = is;
+    }
+
+    public static void isSystemOut(boolean is) {
+        isSystemOut = is;
     }
 
     public static void d(Object obj) {
@@ -49,7 +53,15 @@ public final class LogUtils {
     public static void d(String tag, Object obj) {
         if (enable) {
             String log = obj == null ? "" : obj.toString();
-            Log.d(tag, log);
+            if (isSystemOut) {
+                if (CommonTools.isEmpty(tag)) {
+                    System.out.println(log);
+                } else {
+                    System.out.println(tag + ": " + log);
+                }
+            } else {
+                Log.d(tag, log);
+            }
         }
     }
 
@@ -60,7 +72,15 @@ public final class LogUtils {
     public static void e(String tag, Object obj) {
         if (enable) {
             String log = obj == null ? "" : obj.toString();
-            Log.e(tag, log);
+            if (isSystemOut) {
+                if (CommonTools.isEmpty(tag)) {
+                    System.out.println(log);
+                } else {
+                    System.out.println(tag + ": " + log);
+                }
+            } else {
+                Log.e(tag, log);
+            }
         }
     }
 
@@ -70,7 +90,7 @@ public final class LogUtils {
 
         File outPath;
 
-        CrashHandler(@NonNull File path) {
+        CrashHandler(File path) {
             outPath = path;
         }
 

@@ -1,9 +1,5 @@
 package org.pinwheel.agility2.module;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.text.TextUtils;
-
 import org.pinwheel.agility2.action.Action2;
 import org.pinwheel.agility2.action.Action3;
 import org.pinwheel.agility2.utils.CommonTools;
@@ -24,23 +20,21 @@ import java.net.URL;
  *
  * @author dnwang
  */
-public final class Downloader implements Runnable {
+public final class CacheDownloader implements Runnable {
 
     private String fromUrl;
     private File toFile;
 
-    private final Handler mainHandler;
     private Action2<Boolean, File> completeCallback;
     private Action3<Integer, Integer, Float> progressCallback;
 
     private boolean useCache = true;
     private volatile boolean isCanceled = false;
 
-    public Downloader() {
-        this.mainHandler = new Handler(Looper.getMainLooper());
+    public CacheDownloader() {
     }
 
-    public Downloader fromUrlWithEncode(String fromUrl) {
+    public CacheDownloader fromUrlWithEncode(String fromUrl) {
         if (!CommonTools.isEmpty(fromUrl)) {
             fromUrl = fromUrl.trim();
             final String resName = fromUrl.substring(Math.min(fromUrl.length() - 1, fromUrl.lastIndexOf("/") + 1));
@@ -52,27 +46,27 @@ public final class Downloader implements Runnable {
         return fromUrl(fromUrl);
     }
 
-    public Downloader fromUrl(String fromUrl) {
+    public CacheDownloader fromUrl(String fromUrl) {
         this.fromUrl = fromUrl;
         return this;
     }
 
-    public Downloader toFile(final File toFile) {
+    public CacheDownloader toFile(final File toFile) {
         this.toFile = toFile;
         return this;
     }
 
-    public Downloader onProcess(Action3<Integer, Integer, Float> callable) {
+    public CacheDownloader onProcess(Action3<Integer, Integer, Float> callable) {
         progressCallback = callable;
         return this;
     }
 
-    public Downloader onComplete(Action2<Boolean, File> callable) {
+    public CacheDownloader onComplete(Action2<Boolean, File> callable) {
         completeCallback = callable;
         return this;
     }
 
-    public Downloader cached(boolean is) {
+    public CacheDownloader cached(boolean is) {
         this.useCache = is;
         return this;
     }
@@ -86,46 +80,31 @@ public final class Downloader implements Runnable {
             return;
         }
         final float percent = (0 != total) ? (progress * 1.0f / total) : 0;
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (progressCallback != null) {
-                    progressCallback.call(progress, total, percent);
-                }
-            }
-        });
+        if (progressCallback != null) {
+            progressCallback.call(progress, total, percent);
+        }
     }
 
     private void dividerError(Exception e) {
         if (isCanceled) {
             return;
         }
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (completeCallback != null) {
-                    completeCallback.call(false, null);
-                }
-            }
-        });
+        if (completeCallback != null) {
+            completeCallback.call(false, null);
+        }
     }
 
     private void dividerSuccess() {
         if (isCanceled) {
             return;
         }
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (completeCallback != null) {
-                    completeCallback.call(true, toFile);
-                }
-            }
-        });
+        if (completeCallback != null) {
+            completeCallback.call(true, toFile);
+        }
     }
 
     private String getFileKey() {
-        if (!TextUtils.isEmpty(fromUrl)) {
+        if (!CommonTools.isEmpty(fromUrl)) {
             return DigestUtils.md5(fromUrl);
         } else {
             return null;
@@ -205,7 +184,7 @@ public final class Downloader implements Runnable {
     private boolean checkStatus() {
         progress = 0;
         contentLength = 0;
-        if (TextUtils.isEmpty(fromUrl) || null == toFile) {
+        if (CommonTools.isEmpty(fromUrl) || null == toFile) {
             return false;
         }
         FileUtils.delete(toFile);
@@ -213,7 +192,7 @@ public final class Downloader implements Runnable {
         return true;
     }
 
-    public Downloader execute() {
+    public CacheDownloader execute() {
         AsyncHelper.INSTANCE.once(this);
         return this;
     }
@@ -226,7 +205,7 @@ public final class Downloader implements Runnable {
         private static final File CACHE_PATH = new File(CommonTools.getApplication().getFilesDir(), "cache/downloader");
 
         static void removeCache(final String key) {
-            if (TextUtils.isEmpty(key)) {
+            if (CommonTools.isEmpty(key)) {
                 return;
             }
             final File cache = new File(CACHE_PATH, key);
@@ -251,7 +230,7 @@ public final class Downloader implements Runnable {
         }
 
         static File findCache(final String key) {
-            if (TextUtils.isEmpty(key)) {
+            if (CommonTools.isEmpty(key)) {
                 return null;
             }
             File cache = new File(CACHE_PATH, key);
@@ -262,7 +241,7 @@ public final class Downloader implements Runnable {
         }
 
         static File newEmptyCache(final String key) {
-            if (TextUtils.isEmpty(key)) {
+            if (CommonTools.isEmpty(key)) {
                 return null;
             }
             removeCache(key);
@@ -272,7 +251,7 @@ public final class Downloader implements Runnable {
         }
 
         static void setCacheComplete(final String key) {
-            if (!TextUtils.isEmpty(key)) {
+            if (!CommonTools.isEmpty(key)) {
                 File tmpCache = new File(CACHE_PATH, key + ".temp");
                 tmpCache.renameTo(new File(tmpCache.getParent(), tmpCache.getName().replace(".temp", "")));
             }

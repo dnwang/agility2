@@ -1,8 +1,5 @@
 package org.pinwheel.agility2.utils;
 
-import android.support.annotation.Nullable;
-import android.text.TextUtils;
-
 import org.pinwheel.agility2.action.Action1;
 
 import java.lang.annotation.ElementType;
@@ -43,9 +40,8 @@ public final class FieldUtils {
         throw new AssertionError();
     }
 
-    @Nullable
     public static <T> T getFieldValue(Object obj, String fieldName) {
-        if (null == obj || TextUtils.isEmpty(fieldName)) {
+        if (null == obj || CommonTools.isEmpty(fieldName)) {
             return null;
         }
         Field field = getField(obj.getClass(), fieldName);
@@ -61,9 +57,8 @@ public final class FieldUtils {
         return null;
     }
 
-    @Nullable
     public static Field getField(Class cls, String fieldName) {
-        if (null == cls || TextUtils.isEmpty(fieldName)) {
+        if (null == cls || CommonTools.isEmpty(fieldName)) {
             return null;
         }
         Field field = null;
@@ -79,9 +74,8 @@ public final class FieldUtils {
         return field;
     }
 
-    @Nullable
     public static <T> T invokeMethod(Object obj, String methodName, Object... args) {
-        if (null == obj || TextUtils.isEmpty(methodName)) {
+        if (null == obj || CommonTools.isEmpty(methodName)) {
             return null;
         }
         final Class<?>[] types = new Class[args.length];
@@ -106,9 +100,8 @@ public final class FieldUtils {
         return null;
     }
 
-    @Nullable
     public static <T> T invokeStaticMethod(Class<?> cls, String methodName, Object... args) {
-        if (null == cls || TextUtils.isEmpty(methodName)) {
+        if (null == cls || CommonTools.isEmpty(methodName)) {
             return null;
         }
         final Class<?>[] types = new Class[args.length];
@@ -133,9 +126,8 @@ public final class FieldUtils {
         return null;
     }
 
-    @Nullable
     public static Method getMethod(Class<?> cls, String methodName, Class<?>... parameterTypes) {
-        if (null == cls || TextUtils.isEmpty(methodName)) {
+        if (null == cls || CommonTools.isEmpty(methodName)) {
             return null;
         }
         Method method = null;

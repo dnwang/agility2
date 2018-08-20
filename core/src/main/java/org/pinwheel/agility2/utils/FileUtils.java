@@ -53,7 +53,11 @@ public final class FileUtils {
         try {
             delete(toFile);
             prepareDirs(toFile);
-            return IOUtils.connect(new FileInputStream(fromFile), new FileOutputStream(toFile));
+            if (fromFile.getParentFile().equals(toFile.getParentFile())) {
+                return fromFile.renameTo(toFile) ? 1 : -1;
+            } else {
+                return IOUtils.connect(new FileInputStream(fromFile), new FileOutputStream(toFile));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return -1;
