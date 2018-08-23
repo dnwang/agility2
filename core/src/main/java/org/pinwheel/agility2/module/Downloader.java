@@ -4,17 +4,18 @@ import org.pinwheel.agility2.action.Action2;
 import org.pinwheel.agility2.action.Action3;
 import org.pinwheel.agility2.utils.CommonTools;
 import org.pinwheel.agility2.utils.FileUtils;
-import org.pinwheel.agility2.utils.FormatUtils;
 import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.utils.LogUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +38,10 @@ public final class Downloader {
     private File toFile;
 
     private Action2<Boolean, File> completeCallback;
-    private Action3<Integer, Integer, Float> progressCallback;
+    private Action3<Long, Long, Float> progressCallback;
 
     private int threadSize = Runtime.getRuntime().availableProcessors();
-    private volatile boolean intercept = false;
+    private volatile boolean intercept = true;
 
     private List<Worker> workers = null;
 
@@ -60,7 +61,13 @@ public final class Downloader {
         return this;
     }
 
-    public Downloader onProcess(Action3<Integer, Integer, Float> callable) {
+    public Downloader threadSize(int size) {
+        threadSize = Math.max(1, size);
+        return this;
+    }
+
+    @Deprecated
+    public Downloader onProcess(Action3<Long, Long, Float> callable) {
         progressCallback = callable;
         return this;
     }
@@ -70,9 +77,16 @@ public final class Downloader {
         return this;
     }
 
-    public Downloader threadSize(int size) {
-        threadSize = Math.max(1, size);
-        return this;
+    public long getProgress() {
+        return progress;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public boolean isDownloading() {
+        return !intercept;
     }
 
     private File cfFile;
@@ -80,8 +94,15 @@ public final class Downloader {
     public void stop() {
         intercept = true;
         // save config
-        final ConfigBundle args = new ConfigBundle();
-        args.workers = new ArrayList<>(workers.size());
+        saveConfig();
+    }
+
+    private void saveConfig() {
+        final ConfigBundles args = new ConfigBundles();
+        args.optionsList = new ArrayList<>(workers.size());
+        for (Worker worker : workers) {
+            args.optionsList.add(worker.getOptions());
+        }
         args.contentLength = contentLength;
         args.lastModifyTime = lastModifyTime;
         args.fromUrl = fromUrl;
@@ -93,14 +114,23 @@ public final class Downloader {
                 FileUtils.prepareDirs(cfFile);
                 try {
                     IOUtils.object2Stream(new FileOutputStream(cfFile), args);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    LogUtils.d(TAG, "update download config: " + cfFile);
+                } catch (FileNotFoundException ignore) {
                 }
             }
         });
     }
 
-    private long contentLength, lastModifyTime;
+    private void clearConfig() {
+        AsyncHelper.INSTANCE.once(new Runnable() {
+            @Override
+            public void run() {
+                FileUtils.delete(cfFile);
+            }
+        });
+    }
+
+    private long progress, contentLength, lastModifyTime;
 
     public Downloader start() {
         intercept = false;
@@ -110,26 +140,26 @@ public final class Downloader {
         }
         final OnContentUpdate updateAction = new OnContentUpdate() {
             @Override
-            public void call(Worker worker, long contentLength) {
-                long sum = 0;
-                for (Worker w : workers) {
-                    sum += w.contentLength;
+            public void call(Worker worker, long dLen) {
+                if (isDownloading()) {
+                    progress += dLen;
                 }
-                LogUtils.d(TAG, sum + ", " + FormatUtils.simplifyFileSize(sum));
             }
         };
         final OnConnectionEnd onConnectionEnd = new OnConnectionEnd() {
             @Override
-            public void call(Worker worker, boolean isSuccess) {
+            public synchronized void call(Worker worker, boolean isSuccess) {
                 if (isSuccess) {
                     workers.remove(worker);
                     if (workers.isEmpty()) {
+                        clearConfig();
                         dividerSuccess();
                     }
-                } else {
-                    dividerError(null);
-                    stop();
+                } else if (isDownloading()) {
+                    intercept = true;
+                    saveConfig();
                     workers.clear();
+                    dividerError(null);
                 }
             }
         };
@@ -158,16 +188,16 @@ public final class Downloader {
                     dividerError(connectionExp);
                     return;
                 }
-                final ConfigBundle history = verifyConfigFile();
+                final ConfigBundles history = verifyConfigFile();
                 if (null != history
                         // two file have the same url
                         && contentLength == history.contentLength
                         && lastModifyTime == history.lastModifyTime) {
                     // init workers
-                    workers = new CopyOnWriteArrayList<>(new ArrayList<Worker>(history.workers.size()));
-                    for (Worker worker : history.workers) {
-                        workers.add(worker);
-                        worker.execute(updateAction, onConnectionEnd);
+                    workers = new CopyOnWriteArrayList<>(new ArrayList<Worker>(history.optionsList.size()));
+                    for (WorkerOptions options : history.optionsList) {
+                        workers.add(new Worker(options));
+                        progress += options.contentLength;
                     }
                 } else {
                     FileUtils.delete(cfFile);
@@ -188,19 +218,18 @@ public final class Downloader {
                         // fix last worker end value
                         workers.get(workers.size() - 1).end = contentLength;
                     }
-                    for (Worker worker : workers) {
-                        worker.execute(updateAction, onConnectionEnd);
-                    }
+                }
+                // start workers
+                for (Worker worker : workers) {
+                    worker.execute(updateAction, onConnectionEnd);
                 }
             }
         });
         return this;
     }
 
-    private void dividerProgress(final int progress, final int total) {
-        if (intercept) {
-            return;
-        }
+    @Deprecated
+    private void dividerProgress(final long progress, final long total) {
         final float percent = (0 != total) ? (progress * 1.0f / total) : 0;
         if (progressCallback != null) {
             progressCallback.call(progress, total, percent);
@@ -208,18 +237,12 @@ public final class Downloader {
     }
 
     private void dividerError(Exception e) {
-        if (intercept) {
-            return;
-        }
         if (completeCallback != null) {
             completeCallback.call(false, null);
         }
     }
 
     private void dividerSuccess() {
-        if (intercept) {
-            return;
-        }
         if (completeCallback != null) {
             completeCallback.call(true, toFile);
         }
@@ -234,18 +257,18 @@ public final class Downloader {
         return true;
     }
 
-    private ConfigBundle verifyConfigFile() {
+    private ConfigBundles verifyConfigFile() {
         Object obj = null;
         try {
             obj = IOUtils.stream2Object(new FileInputStream(cfFile));
-        } catch (Exception ignore) {
-            LogUtils.d("no history, " + cfFile.getAbsolutePath());
+        } catch (FileNotFoundException ignore) {
+            LogUtils.d(TAG, "can't find download config: " + cfFile);
         }
         if (null != obj) {
-            ConfigBundle args = (ConfigBundle) obj;
+            ConfigBundles args = (ConfigBundles) obj;
             if (fromUrl.equals(args.fromUrl)
                     && toFile.equals(args.toFile)
-                    && !CommonTools.isEmpty(args.workers)) {
+                    && !CommonTools.isEmpty(args.optionsList)) {
                 FileUtils.delete(cfFile);
                 return args;
             }
@@ -253,13 +276,19 @@ public final class Downloader {
         return null;
     }
 
-    private static class ConfigBundle implements Serializable {
+    private final static class ConfigBundles implements Serializable {
         String fromUrl;
         File toFile;
-        List<Worker> workers;
+        ArrayList<WorkerOptions> optionsList;
 
         long contentLength;
         long lastModifyTime;
+    }
+
+    private final static class WorkerOptions implements Serializable {
+        long begin;
+        long end;
+        long contentLength = 0;
     }
 
     private interface OnContentUpdate {
@@ -270,24 +299,44 @@ public final class Downloader {
         void call(Worker worker, boolean isSuccess);
     }
 
-    private final class Worker implements Serializable {
-
+    private final class Worker {
         private final static int BUF_SIZE = 1024;
+        private final static int RETRY_MAX = 3;
 
         long begin;
         long end;
-        long contentLength = 0;
+        long contentLength;
 
         Worker(long begin, long end) {
             this.begin = begin;
             this.end = end;
+            this.contentLength = 0;
+        }
+
+        Worker(WorkerOptions options) {
+            this.begin = options.begin;
+            this.end = options.end;
+            this.contentLength = options.contentLength;
+        }
+
+        WorkerOptions getOptions() {
+            final WorkerOptions options = new WorkerOptions();
+            options.begin = begin;
+            options.end = end;
+            options.contentLength = contentLength;
+            return options;
         }
 
         void execute(final OnContentUpdate onContentUpdate, final OnConnectionEnd onConnectionEnd) {
             final Runnable downloadAction = new Runnable() {
+                boolean stopFlag = false;
+                boolean retryFlag = false;
+                int retryCount = 0;
+
                 @Override
                 public void run() {
-                    boolean result = true;
+                    retryFlag = false;
+
                     HttpURLConnection conn = null;
                     InputStream inStream = null;
                     RandomAccessFile outStream = null;
@@ -307,22 +356,35 @@ public final class Downloader {
                         outStream.seek(beginOffset);
                         byte[] buf = new byte[BUF_SIZE];
                         int len;
-                        while (!intercept && (len = inStream.read(buf)) > 0) {
+                        while ((len = inStream.read(buf)) > 0) {
                             outStream.write(buf, 0, len);
                             contentLength += len;
-                            onContentUpdate.call(Worker.this, contentLength);
+                            onContentUpdate.call(Worker.this, len);
+                            if (intercept) {
+                                throw new RuntimeException("call stop(), worker intercept");
+                            }
                         }
-                        result = !intercept;
+                    } catch (SocketTimeoutException e) {
+                        retryFlag = true;
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        result = false;
+                        LogUtils.e(TAG, "worker[" + Worker.this + "] exp: " + e.getMessage());
+                        stopFlag = true;
                     } finally {
                         IOUtils.close(inStream);
                         IOUtils.close(outStream);
                         if (null != conn) {
                             conn.disconnect();
                         }
-                        onConnectionEnd.call(Worker.this, result);
+                        if (!retryFlag) {
+                            onConnectionEnd.call(Worker.this, !stopFlag);
+                        } else {
+                            if (retryCount++ < RETRY_MAX) {
+                                LogUtils.e(TAG, "worker[" + Worker.this + "] timeOut, retry: " + retryCount);
+                                run();
+                            } else {
+                                onConnectionEnd.call(Worker.this, false);
+                            }
+                        }
                     }
                 }
             };

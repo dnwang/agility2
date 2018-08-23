@@ -3,6 +3,9 @@ package org.pinwheel.demo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -10,9 +13,9 @@ import android.widget.ImageView;
 
 import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Action2;
-import org.pinwheel.agility2.action.Action3;
 import org.pinwheel.agility2.module.Downloader;
 import org.pinwheel.agility2.utils.CommonTools;
+import org.pinwheel.agility2.utils.FormatUtils;
 import org.pinwheel.agility2.utils.LogUtils;
 
 import java.io.File;
@@ -66,33 +69,51 @@ public final class MainActivity extends AbsTesterActivity {
         });
     }
 
-    @Tester(title = "Downloader start")
+    @Tester(title = "Start download")
     void testDownloader() {
         downloader = new Downloader()
                 .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
-                .toFile(new File("/sdcard/downloader.apk"))
-                .onProcess(new Action3<Integer, Integer, Float>() {
-                    @Override
-                    public void call(Integer obj0, Integer obj1, Float obj2) {
-
-                    }
-                })
+                .toFile(new File(Environment.getExternalStorageDirectory(), "weixin672android1340.apk"))
                 .onComplete(new Action2<Boolean, File>() {
                     @Override
                     public void call(Boolean obj0, File obj1) {
                         LogUtils.d("isSuccess: " + obj0 + ", file: " + obj1);
+                        mainHandler.removeCallbacks(progressUpdater);
                     }
                 })
                 .start();
+        mainHandler.removeCallbacks(progressUpdater);
+        mainHandler.post(progressUpdater);
     }
+
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Runnable progressUpdater = new Runnable() {
+        long lastProgress = 0;
+
+        @Override
+        public void run() {
+            if (null != downloader) {
+                long progress = downloader.getProgress();
+                long contentLength = downloader.getContentLength();
+                LogUtils.d(FormatUtils.simplifyFileSize(progress) + ", "
+                        + Math.round(progress * 1.0 / contentLength * 100) + "%, "
+                        + (progress - lastProgress) / 1000 + "kb/s");
+                if (downloader.isDownloading()) {
+                    mainHandler.postDelayed(this, 1000);
+                }
+                lastProgress = progress;
+            }
+        }
+    };
 
     private Downloader downloader = null;
 
-    @Tester(title = "Downloader stop")
+    @Tester(title = "Stop download")
     void testDownloaderStop() {
         if (null != downloader) {
             downloader.stop();
         }
+        mainHandler.removeCallbacks(progressUpdater);
     }
 
 }
