@@ -815,6 +815,7 @@ public class SweetCircularView extends ViewGroup {
         void layout(Rect bounds) {
             if (null != view) {
                 view.layout(bounds.left, bounds.top, bounds.right, bounds.bottom);
+                view.invalidate();
             }
         }
 

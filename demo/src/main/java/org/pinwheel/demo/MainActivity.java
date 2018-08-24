@@ -10,11 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Action2;
 import org.pinwheel.agility2.module.Downloader;
 import org.pinwheel.agility2.utils.CommonTools;
+import org.pinwheel.agility2.utils.FileUtils;
 import org.pinwheel.agility2.utils.FormatUtils;
 import org.pinwheel.agility2.utils.LogUtils;
 
@@ -71,13 +73,17 @@ public final class MainActivity extends AbsTesterActivity {
 
     @Tester(title = "Start download")
     void testDownloader() {
+        final File file = new File(Environment.getExternalStorageDirectory(), "Android1_0_0.pdf");
+        FileUtils.delete(file);
         downloader = new Downloader()
-                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
-                .toFile(new File(Environment.getExternalStorageDirectory(), "weixin672android1340.apk"))
-                .onComplete(new Action2<Boolean, File>() {
+//                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
+                .fromUrl("http://47.88.52.115:8082/files/Android1_0_0.pdf")
+                .toFile(file)
+                .notifyWorkerComplete(new Action2<Boolean, File>() {
                     @Override
                     public void call(Boolean obj0, File obj1) {
-                        LogUtils.d("isSuccess: " + obj0 + ", file: " + obj1);
+                        Toast.makeText(MainActivity.this, String.valueOf(obj0), Toast.LENGTH_SHORT).show();
+                        LogUtils.d("status: " + obj0 + ", file: " + obj1);
                         mainHandler.removeCallbacks(progressUpdater);
                     }
                 })

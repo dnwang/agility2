@@ -13,6 +13,7 @@ import android.widget.ListView;
 
 import org.pinwheel.agility2.adapter.SimpleArrayAdapter;
 import org.pinwheel.agility2.utils.CommonTools;
+import org.pinwheel.agility2.utils.LogUtils;
 import org.pinwheel.agility2.view.ViewHolder;
 
 import java.lang.annotation.ElementType;
@@ -22,6 +23,8 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 
 abstract class AbsTesterActivity extends Activity {
+
+    private static final String TAG = AbsTesterActivity.class.getSimpleName();
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
@@ -55,7 +58,7 @@ abstract class AbsTesterActivity extends Activity {
             try {
                 ((Method) obj).invoke(AbsTesterActivity.this);
             } catch (Exception e) {
-                e.printStackTrace();
+                LogUtils.e(TAG, "Tester function invoke error: " + ((Method) obj).getName());
             }
         }
     };
