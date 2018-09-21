@@ -63,8 +63,8 @@ public enum AsyncHelper {
         }
         return specific(2, interval, new Action1<Integer>() {
             @Override
-            public void call(Integer count) {
-                if (2 == count) {
+            public void call(Integer times) {
+                if (2 == times) {
                     runnable.run();
                 }
             }
@@ -89,9 +89,9 @@ public enum AsyncHelper {
             throw new IllegalStateException("task params error !");
         }
         final Option option = new Option(1, 0); // once
-        final Task<T> task = new Task<>(option, new Function1<T, Integer>() {
+        final Task<T> task = new ActionTask<>(option, new Function1<T, Integer>() {
             @Override
-            public T call(Integer obj0) {
+            public T call(Integer times) {
                 return func.call();
             }
         }, action);
@@ -106,8 +106,8 @@ public enum AsyncHelper {
     public String specific(int count, long interval, Action1<Integer> action) {
         return specific(count, interval, new Function1<Integer, Integer>() {
             @Override
-            public Integer call(Integer obj0) {
-                return obj0;
+            public Integer call(Integer times) {
+                return times;
             }
         }, action);
     }
@@ -117,7 +117,8 @@ public enum AsyncHelper {
             throw new IllegalStateException("task params error !");
         }
         final Option option = new Option(count, interval);
-        final Task<T> task = new Task<>(option, func, action);
+        final Task<T> task = (null != action) ?
+                new ActionTask<>(option, func, action) : new Task<>(option, func);
         startTask(task);
         return task.id;
     }
@@ -129,8 +130,8 @@ public enum AsyncHelper {
     public String forever(long interval, Action1<Integer> action) {
         return forever(interval, new Function1<Integer, Integer>() {
             @Override
-            public Integer call(Integer obj0) {
-                return obj0;
+            public Integer call(Integer times) {
+                return times;
             }
         }, action);
     }
@@ -140,7 +141,8 @@ public enum AsyncHelper {
             throw new IllegalStateException("task params error !");
         }
         final Option option = new Option(-1, interval);// forever
-        final Task<T> task = new Task<>(option, func, action);
+        final Task<T> task = (null != action) ?
+                new ActionTask<>(option, func, action) : new Task<>(option, func);
         startTask(task);
         return task.id;
     }
@@ -175,24 +177,20 @@ public enum AsyncHelper {
         }
     }
 
-    private static final class Task<K> {
+    private static class Task<K> {
         volatile boolean running = false;
 
         final String id;
         final Option option;
         final Runnable runnable;
         final Function1<K, Integer> func;
-        final Action1<K> action;
-        final Handler uiHandler;
 
-        private int count = 0;
+        int count = 0;
 
-        private Task(final Option option, final Function1<K, Integer> func, final Action1<K> action) {
+        Task(final Option option, final Function1<K, Integer> func) {
             this.id = CommonTools.randomUUID();
             this.option = option;
             this.func = func;
-            this.action = action;
-            this.uiHandler = (null == action) ? null : new Handler(Looper.getMainLooper());
 
             this.runnable = new Runnable() {
                 @Override
@@ -200,15 +198,7 @@ public enum AsyncHelper {
                     running = true;
                     // just run once
                     while (running && (option.count < 0 || count < option.count)) {
-                        final K result = (null != func) ? func.call(count + 1) : null;
-                        if (null != action) {
-                            uiHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    action.call(result);
-                                }
-                            });
-                        }
+                        onResult((null != func) ? func.call(count + 1) : null);
                         count++;
                         if (option.interval > 0) {
                             CommonTools.sleep(option.interval);
@@ -219,8 +209,38 @@ public enum AsyncHelper {
             };
         }
 
-        void stop() {
+        final void stop() {
             running = false;
+        }
+
+        void onResult(K result) {
+        }
+    }
+
+    private final class ActionTask<R> extends Task<R> {
+        final Action1<R> action;
+        final Handler uiHandler;
+
+        ActionTask(Option option, Function1<R, Integer> func, Action1<R> action) {
+            super(option, func);
+            this.action = action;
+            this.uiHandler = (null == action) ? null : new Handler(Looper.getMainLooper());
+        }
+
+        @Override
+        void onResult(final R result) {
+            if (null != action) {
+                if (null != uiHandler) {
+                    uiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            action.call(result);
+                        }
+                    });
+                } else {
+                    action.call(result);
+                }
+            }
         }
     }
 

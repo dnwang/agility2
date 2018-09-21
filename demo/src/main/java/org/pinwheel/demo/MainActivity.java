@@ -13,7 +13,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.pinwheel.agility2.action.Action0;
-import org.pinwheel.agility2.action.Action2;
+import org.pinwheel.agility2.action.Action1;
 import org.pinwheel.agility2.module.Downloader2;
 import org.pinwheel.agility2.utils.CommonTools;
 import org.pinwheel.agility2.utils.FileUtils;
@@ -79,11 +79,11 @@ public final class MainActivity extends AbsTesterActivity {
 //                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
                 .fromUrl("http://47.88.52.115:8082/files/Android1_0_0.pdf")
                 .toFile(file)
-                .notifyWorkerComplete(new Action2<Boolean, File>() {
+                .notifyWorkerComplete(new Action1<File>() {
                     @Override
-                    public void call(Boolean obj0, File obj1) {
-                        Toast.makeText(MainActivity.this, String.valueOf(obj0), Toast.LENGTH_SHORT).show();
-                        LogUtils.d("status: " + obj0 + ", file: " + obj1);
+                    public void call(File file) {
+                        Toast.makeText(MainActivity.this, String.valueOf(file), Toast.LENGTH_SHORT).show();
+                        LogUtils.d("status: " + file + ", file: " + file);
                         mainHandler.removeCallbacks(progressUpdater);
                     }
                 })
