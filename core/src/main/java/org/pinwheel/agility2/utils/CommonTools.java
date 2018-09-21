@@ -322,6 +322,7 @@ public final class CommonTools {
     public static boolean isNetworkConnected(Context context) {
         if (context != null) {
             ConnectivityManager mConnectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (checkPermissions())
             NetworkInfo mNetworkInfo = mConnectivityManager.getActiveNetworkInfo();
             if (mNetworkInfo != null) {
                 return mNetworkInfo.isAvailable();
@@ -556,6 +557,7 @@ public final class CommonTools {
 
     public static CharSequence markText(String raw, String match, @ColorInt int color) {
         match = (null == match) ? "" : match;
+        raw = (null == raw) ? "" : raw;
         final int start = raw.indexOf(match);
         SpannableStringBuilder ssb = new SpannableStringBuilder(raw);
         if (start >= 0) {

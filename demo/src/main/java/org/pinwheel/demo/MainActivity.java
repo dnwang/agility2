@@ -14,7 +14,7 @@ import android.widget.Toast;
 
 import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Action2;
-import org.pinwheel.agility2.module.Downloader;
+import org.pinwheel.agility2.module.Downloader2;
 import org.pinwheel.agility2.utils.CommonTools;
 import org.pinwheel.agility2.utils.FileUtils;
 import org.pinwheel.agility2.utils.FormatUtils;
@@ -75,7 +75,7 @@ public final class MainActivity extends AbsTesterActivity {
     void testDownloader() {
         final File file = new File(Environment.getExternalStorageDirectory(), "Android1_0_0.pdf");
         FileUtils.delete(file);
-        downloader = new Downloader()
+        downloader = new Downloader2()
 //                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
                 .fromUrl("http://47.88.52.115:8082/files/Android1_0_0.pdf")
                 .toFile(file)
@@ -112,7 +112,7 @@ public final class MainActivity extends AbsTesterActivity {
         }
     };
 
-    private Downloader downloader = null;
+    private Downloader2 downloader = null;
 
     @Tester(title = "Stop download")
     void testDownloaderStop() {
