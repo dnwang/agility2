@@ -1,5 +1,5 @@
 buildscript {
-    ext.supportVer = "27.1.1"
+    ext.supportVer = "28.0.0"
     ext.gsonVer = "2.8.2"
 
     repositories {

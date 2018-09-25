@@ -3,24 +3,14 @@ package org.pinwheel.demo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import org.pinwheel.agility2.action.Action0;
-import org.pinwheel.agility2.action.Action1;
-import org.pinwheel.agility2.module.Downloader2;
 import org.pinwheel.agility2.utils.CommonTools;
-import org.pinwheel.agility2.utils.FileUtils;
-import org.pinwheel.agility2.utils.FormatUtils;
 import org.pinwheel.agility2.utils.LogUtils;
-
-import java.io.File;
 
 public final class MainActivity extends AbsTesterActivity {
 
@@ -69,57 +59,6 @@ public final class MainActivity extends AbsTesterActivity {
                 startActivity(intent);
             }
         });
-    }
-
-    @Tester(title = "Start download")
-    void testDownloader() {
-        final File file = new File(Environment.getExternalStorageDirectory(), "Android1_0_0.pdf");
-        FileUtils.delete(file);
-        downloader = new Downloader2()
-//                .fromUrl("https://dldir1.qq.com/weixin/android/weixin672android1340.apk")
-                .fromUrl("http://47.88.52.115:8082/files/Android1_0_0.pdf")
-                .toFile(file)
-                .notifyWorkerComplete(new Action1<File>() {
-                    @Override
-                    public void call(File file) {
-                        Toast.makeText(MainActivity.this, String.valueOf(file), Toast.LENGTH_SHORT).show();
-                        LogUtils.d("status: " + file + ", file: " + file);
-                        mainHandler.removeCallbacks(progressUpdater);
-                    }
-                })
-                .start();
-        mainHandler.removeCallbacks(progressUpdater);
-        mainHandler.post(progressUpdater);
-    }
-
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
-    private Runnable progressUpdater = new Runnable() {
-        long lastProgress = 0;
-
-        @Override
-        public void run() {
-            if (null != downloader) {
-                long progress = downloader.getProgress();
-                long contentLength = downloader.getContentLength();
-                LogUtils.d(FormatUtils.simplifyFileSize(progress) + ", "
-                        + Math.round(progress * 1.0 / contentLength * 100) + "%, "
-                        + (progress - lastProgress) / 1000 + "kb/s");
-                if (downloader.isDownloading()) {
-                    mainHandler.postDelayed(this, 1000);
-                }
-                lastProgress = progress;
-            }
-        }
-    };
-
-    private Downloader2 downloader = null;
-
-    @Tester(title = "Stop download")
-    void testDownloaderStop() {
-        if (null != downloader) {
-            downloader.stop();
-        }
-        mainHandler.removeCallbacks(progressUpdater);
     }
 
 }
