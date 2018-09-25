@@ -7,18 +7,19 @@ import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.utils.LogUtils;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.lang.ref.WeakReference;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Copyright (C), 2015 <br>
@@ -69,89 +70,6 @@ public final class Downloader2 {
         return this;
     }
 
-//    public long getProgress() {
-//        return progress;
-//    }
-//
-//    public long getContentLength() {
-//        return contentLength;
-//    }
-//
-//    public boolean isDownloading() {
-//        return !intercept;
-//    }
-//
-//    private void saveInterceptParams() {
-//        final InterceptParams args = new InterceptParams();
-//        args.optionsList = new ArrayList<>(workers.size());
-//        for (Worker worker : workers) {
-//            args.optionsList.add(worker.getOptions());
-//        }
-//        args.contentLength = contentLength;
-//        args.lastModifyTime = lastModifyTime;
-//        args.fromUrl = fromUrl;
-//        args.dataFile = dataFile;
-//        FileUtils.delete(cfFile);
-//        FileUtils.prepareDirs(cfFile);
-//        try {
-//            IOUtils.object2Stream(new FileOutputStream(cfFile), args);
-//            LogUtils.d(TAG, "saveInterceptParams: " + cfFile);
-//        } catch (FileNotFoundException e) {
-//            LogUtils.e(TAG, "saveInterceptParams: " + e.getMessage());
-//        }
-//    }
-//
-//    private InterceptParams getInterceptParams() {
-//        Object obj = null;
-//        try {
-//            obj = IOUtils.stream2Object(new FileInputStream(cfFile));
-//        } catch (FileNotFoundException e) {
-//            LogUtils.e(TAG, "getInterceptParams: " + e.getMessage());
-//        }
-//        if (null != obj) {
-//            InterceptParams args = (InterceptParams) obj;
-//            if (dataFile.exists()
-//                    && fromUrl.equals(args.fromUrl)
-//                    && dataFile.equals(args.dataFile)
-//                    && !CommonTools.isEmpty(args.optionsList)) {
-//                return args;
-//            } else {
-//                FileUtils.delete(cfFile);
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private void notifyWorkerContentLengthChanged(Worker worker, long bufLen) {
-//        if (!isDownloading()) {
-//            return;
-//        }
-//        progress += bufLen;
-//    }
-//
-//    private synchronized void onComplete(Worker worker) {
-//        if (!isDownloading()) {
-//            return;
-//        }
-//        if (worker.isComplete()) {
-//            workers.remove(worker);
-//            if (workers.isEmpty()) {
-//                intercept = true;
-//                FileUtils.delete(cfFile);
-//                FileUtils.delete(toFile);
-//                if (dataFile.renameTo(toFile)) {
-//                    dividerSuccess();
-//                } else {
-//                    dividerError(new IllegalStateException("'dataFile' can't transfer to 'outFile'!"));
-//                }
-//            }
-//        } else {
-//            intercept = true;
-//            saveInterceptParams();
-//            dividerError(new InterruptedException("download worker interrupted, maybe connection error!"));
-//        }
-//    }
-
     public void stop() {
         if (null != controller) {
             controller.intercept();
@@ -168,17 +86,15 @@ public final class Downloader2 {
         AsyncHelper.INSTANCE.once(new Runnable() {
             @Override
             public void run() {
-                FileUtils.prepareDirs(toFile);
-                controller = new Controller(fromUrl, toFile);
-                if (controller.prepare()) {
-                    controller.allocateWorker(threadSize);
-                    controller.handleBlockQueue(new Runnable() {
-                        @Override
-                        public void run() {
-                            dividerProgress(controller.progress, controller.contentLength);
-                        }
-                    });
-                }
+                controller = new Controller();
+                controller.prepare(fromUrl, toFile);
+                controller.allocateWorker(threadSize);
+                controller.handleBlockQueue(new Runnable() {
+                    @Override
+                    public void run() {
+                        dividerProgress(controller.p.progress, controller.p.contentLength);
+                    }
+                });
                 if (controller.isComplete() && controller.transfer()) {
                     dividerSuccess();
                 } else {
@@ -210,52 +126,27 @@ public final class Downloader2 {
     private final static class Controller {
         private volatile boolean intercept = false;
 
-        private BlockingQueue<Block> blockQueue = new PriorityBlockingQueue<>();
+        private BlockingQueue<Block> blockQueue = new LinkedBlockingQueue<>();
         private List<BlockGetter> workers;
 
-        private String url;
         private File file;
-        private File dataFile, cfFile;
-        private long progress, contentLength, lastModifyTime;
+        private Params p;
 
-        private Controller(String url, File file) {
-            this.url = url;
+        void prepare(final String url, final File file) {
             this.file = file;
-            this.cfFile = new File(file.getAbsolutePath() + ".cf");
-            this.dataFile = new File(file.getAbsolutePath() + ".data");
-            this.lastModifyTime = Long.MIN_VALUE;
-            this.contentLength = Long.MIN_VALUE;
-            this.progress = 0;
-        }
-
-        private boolean prepare() {
-            // remote params
-            long remoteLastModifyTime = Long.MIN_VALUE;
-            long remoteContentLength = Long.MIN_VALUE;
-            HttpURLConnection conn = null;
-            try {
-                conn = (HttpURLConnection) new URL(url).openConnection();
-                conn.setRequestProperty("Accept-Encoding", "identity");
-                remoteContentLength = conn.getContentLength();
-                remoteLastModifyTime = conn.getLastModified();
-            } catch (Exception e) {
-                LogUtils.e(TAG, e.getMessage());
-            } finally {
-                if (null != conn) {
-                    conn.disconnect();
-                }
+            final Params nativeParams = Params.load(new File(file.getAbsolutePath() + ".cf"));
+            final Params remoteParams = Params.load(url);
+            if (nativeParams.equals(remoteParams)) {
+                this.p = nativeParams;
+            } else {
+                this.p = remoteParams;
             }
-            // TODO verify native config file
-            contentLength = remoteContentLength;
-            lastModifyTime = remoteLastModifyTime;
-
-            return Long.MIN_VALUE != remoteLastModifyTime;
         }
 
-        private void allocateWorker(final int maxThreadSize) {
+        void allocateWorker(final int maxThreadSize) {
             workers = new ArrayList<>(maxThreadSize);
-            //
-            if (contentLength < 2 * 2014 * 1024 // use single thread when size less than 2M
+            // TODO
+            if (p.contentLength < 2 * 2014 * 1024 // use single thread when size less than 2M
                     || 1 == maxThreadSize) {
                 // single thread
                 workers.add(new BlockGetter(0, Long.MAX_VALUE));
@@ -266,7 +157,7 @@ public final class Downloader2 {
                         // fix last worker end value
                         end = Long.MAX_VALUE;
                     } else {
-                        end = contentLength / maxThreadSize * (i + 1);
+                        end = p.contentLength / maxThreadSize * (i + 1);
                     }
                     workers.add(new BlockGetter(begin, end));
                     begin = end + 1;
@@ -274,74 +165,185 @@ public final class Downloader2 {
             }
         }
 
-        private void handleBlockQueue(Runnable periodAction) {
+        void handleBlockQueue(Runnable periodAction) {
             RandomAccessFile accessFile = null;
             try {
+                final File dataFile = new File(this.file.getAbsolutePath() + ".data");
+                FileUtils.prepareDirs(dataFile);
                 accessFile = new RandomAccessFile(dataFile, "rwd");
-                accessFile.setLength(contentLength);
-            } catch (Exception e) {
-                IOUtils.close(accessFile);
-                LogUtils.e(TAG, e.getMessage());
-                intercept();
-                return;
-            }
-            //
-            for (BlockGetter worker : workers) {
-                worker.executeBy(this);
-            }
-            //
-            long dLen;
-            final List<Block> availableBlock = new ArrayList<>();
-            while (!intercept) {
-                dLen = 0;
-                availableBlock.clear();
-                blockQueue.drainTo(availableBlock);
-                for (Block block : availableBlock) {
-                    try {
-                        accessFile.seek(block.offset);
-                        accessFile.write(block.data);
-
-                        dLen += block.data.length;
-                    } catch (IOException e) {
-                        LogUtils.e(TAG, "write: [" + block.offset + "," + block.offset + block.data.length + "] error! " + e.getMessage());
-                    }
-                    block.recycle();
+                accessFile.setLength(p.contentLength);
+                // start workers
+                for (BlockGetter worker : workers) {
+                    worker.executeBy(this);
                 }
-                progress += dLen;
-                periodAction.run();
+                // blocking write file
+                Block block;
+                do {
+                    block = blockQueue.take();
+                    accessFile.seek(block.offset);
+                    accessFile.write(block.data);
+                    p.merge(block);
+                    block.recycle();
+                    periodAction.run();
+
+                    if (blockQueue.isEmpty() && isComplete()) {
+                        break;
+                    }
+                } while (!intercept);
+            } catch (Exception e) {
+                LogUtils.e(TAG, e.getMessage());
+            } finally {
+                IOUtils.close(accessFile);
+                intercept();
             }
-            // close
-            IOUtils.close(accessFile);
-            intercept();
         }
 
-        private void put(Block block) {
-            blockQueue.add(block);
+        void put(Block block) {
+            if (block.offset >= 0 && block.data.length > 0) {
+                blockQueue.add(block);
+            }
         }
 
-        private boolean isComplete() {
-            // TODO
-            return true;
+        boolean isComplete() {
+            if (1 == p.blocks.size()) {
+                long blockContentLength = p.blocks.get(0L);
+                return blockContentLength == p.contentLength - 1;
+            }
+            return false;
         }
 
-        private boolean transfer() {
-            return this.dataFile.renameTo(this.file);
+        boolean transfer() {
+            final File dataFile = new File(file.getAbsolutePath() + ".data");
+            final File cfFile = new File(file.getAbsolutePath() + ".cf");
+            final boolean result = dataFile.exists() && dataFile.renameTo(file);
+            if (result) {
+                FileUtils.delete(cfFile);
+            }
+            return result;
         }
 
-        private void intercept() {
+        void intercept() {
             intercept = true;
             workers.clear();
+            if (!isComplete()) {
+                AsyncHelper.INSTANCE.once(new Runnable() {
+                    @Override
+                    public void run() {
+                        final File cfFile = new File(file.getAbsolutePath() + ".cf");
+                        FileUtils.delete(cfFile);
+                        FileUtils.prepareDirs(cfFile);
+                        try {
+                            IOUtils.object2Stream(new FileOutputStream(cfFile), p);
+                        } catch (Exception e) {
+                            LogUtils.e(TAG, "save config error! " + e.getMessage());
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private final static class Params implements Serializable {
+        final String url;
+        final long contentLength;
+        final long lastModifyTime;
+
+        long progress;
+        Map<Long, Long> blocks;
+
+        private Params(String url, long contentLength, long lastModifyTime) {
+            this.url = url;
+            this.contentLength = contentLength;
+            this.lastModifyTime = lastModifyTime;
+        }
+
+        static Params load(File cfFile) {
+            try {
+                final Params params = (Params) IOUtils.stream2Object(new FileInputStream(cfFile));
+                if (null != params && null != params.blocks) {
+                    for (Map.Entry<Long, Long> b : params.blocks.entrySet()) {
+                        params.progress += b.getValue() - b.getKey() + 1;
+                    }
+                }
+                return params;
+            } catch (Exception e) {
+                return new Params(null, -1, -1);
+            }
+        }
+
+        static Params load(String url) {
+            long contentLength = -1, lastModifyTime = -1;
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setRequestProperty("Accept-Encoding", "identity");
+                conn.setDoOutput(false);
+                conn.setDoInput(false);
+                contentLength = conn.getContentLength();
+                lastModifyTime = conn.getLastModified();
+            } catch (Exception e) {
+                LogUtils.e(TAG, "can't get remote p! " + e.getMessage());
+            } finally {
+                if (null != conn) {
+                    conn.disconnect();
+                }
+            }
+            return new Params(url, contentLength, lastModifyTime);
+        }
+
+        void merge(Block block) {
+            if (null == blocks) {
+                blocks = new LinkedHashMap<>();
+            }
+            progress += block.data.length;
+            // merge
+            long begin = block.offset;
+            long end = begin + block.data.length - 1;
+            Map.Entry<Long, Long> left = null, right = null;
+            for (Map.Entry<Long, Long> b : blocks.entrySet()) {
+                if (b.getKey() == end + 1) {
+                    right = b;
+                }
+                if (b.getValue() == Math.max(0, begin - 1)) {
+                    left = b;
+                }
+            }
+            if (null != left) {
+                begin = left.getKey();
+                blocks.remove(left.getKey());
+            }
+            if (null != right) {
+                end = right.getValue();
+                blocks.remove(right.getKey());
+            }
+            blocks.put(begin, end);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (null == obj || !(obj instanceof Params)) {
+                return false;
+            } else {
+                final Params that = (Params) obj;
+                return that.url.equals(url)
+                        && that.contentLength == contentLength
+                        && that.lastModifyTime == lastModifyTime;
+            }
         }
     }
 
     private final static class BlockGetter implements Runnable {
         private final static int BUF_SIZE = 1024;
 
+        private String name;
         private final long begin, end;
 
         BlockGetter(long begin, long end) {
             this.begin = begin;
             this.end = end;
+
+            this.name = this.toString();
+            this.name = name.substring(name.lastIndexOf("@"));
         }
 
         private Controller controller;
@@ -353,31 +355,31 @@ public final class Downloader2 {
 
         @Override
         public void run() {
-            if (null == controller || begin < 0 || end < 0 || begin < end) {
-                LogUtils.e(TAG, "[" + this + "] exp: range error! [" + begin + ", " + end + "]");
+            if (null == controller || begin < 0 || end < 0 || begin > end) {
+                LogUtils.e(TAG, "[" + this.name + "] range error! [" + begin + ", " + end + "]");
                 return;
             }
             HttpURLConnection conn = null;
             InputStream inStream = null;
             try {
-                conn = (HttpURLConnection) new URL(controller.url).openConnection();
+                conn = (HttpURLConnection) new URL(controller.p.url).openConnection();
                 conn.setConnectTimeout(TIME_OUT);
                 conn.setReadTimeout(TIME_OUT);
                 conn.setRequestProperty("Accept-Encoding", "identity");
                 conn.setRequestProperty("Range", "bytes=" + begin + "-" + (Long.MAX_VALUE == end ? "" : end));
                 conn.connect();
                 inStream = conn.getInputStream();
-                int contentLength = 0;
+                long offset = begin;
                 byte[] buf = new byte[BUF_SIZE];
                 int len;
                 while ((len = inStream.read(buf)) > 0 && !controller.intercept) {
                     byte[] data = new byte[len];
                     System.arraycopy(buf, 0, data, 0, len);
-                    this.controller.put(Block.obtain(contentLength, data));
-                    contentLength += len;
+                    this.controller.put(Block.obtain(offset, data));
+                    offset += len;
                 }
             } catch (Exception e) {
-                LogUtils.e(TAG, "[" + this + "] exp: " + e.getMessage());
+                LogUtils.e(TAG, "[" + this.name + "] " + e.getMessage());
             } finally {
                 IOUtils.close(inStream);
                 if (null != conn) {
@@ -392,43 +394,48 @@ public final class Downloader2 {
         byte[] data;
 
         void recycle() {
-            synchronized (POOL) {
-                this.offset = -1;
-                this.data = null;
-            }
+//            synchronized (POOL) {
+//                this.offset = -1;
+//                this.data = null;
+//            }
         }
 
         boolean isRecycle() {
             return null == this.data;
         }
 
-        private static final int INIT_SIZE = 12;
-        private static final Set<WeakReference<Block>> POOL = new HashSet<>(INIT_SIZE);
-
-        static {
-            for (int i = 0; i < INIT_SIZE; i++) {
-                POOL.add(new WeakReference<>(new Block()));
-            }
-        }
+//        private static final int INIT_SIZE = 12;
+//        private static final Set<WeakReference<Block>> POOL = new HashSet<>(INIT_SIZE);
+//
+//        static {
+//            for (int i = 0; i < INIT_SIZE; i++) {
+//                POOL.add(new WeakReference<>(new Block()));
+//            }
+//        }
 
         static Block obtain(long offset, byte[] data) {
-            synchronized (POOL) {
-                Block instance = null;
-                for (WeakReference<Block> ref : POOL) {
-                    Block tmp = ref.get();
-                    if (null != tmp && tmp.isRecycle()) {
-                        instance = tmp;
-                        break;
-                    }
-                }
-                if (null == instance) {
-                    instance = new Block();
-                    POOL.add(new WeakReference<>(instance));
-                }
-                instance.offset = offset;
-                instance.data = data;
-                return instance;
-            }
+            Block instance = new Block();
+            instance.offset = offset;
+            instance.data = data;
+            return instance;
+
+//            synchronized (POOL) {
+//                Block instance = null;
+//                for (WeakReference<Block> ref : POOL) {
+//                    Block tmp = ref.get();
+//                    if (null != tmp && tmp.isRecycle()) {
+//                        instance = tmp;
+//                        break;
+//                    }
+//                }
+//                if (null == instance) {
+//                    instance = new Block();
+//                    POOL.add(new WeakReference<>(instance));
+//                }
+//                instance.offset = offset;
+//                instance.data = data;
+//                return instance;
+//            }
         }
     }
 

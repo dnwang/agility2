@@ -27,7 +27,7 @@ public class ExampleUnitTest {
         downloader = new Downloader2()
                 .fromUrl(url)
                 .toFile(file)
-                .threadSize(4)
+                .threadSize(1)
                 .onProcess(new Action2<Long, Long>() {
                     @Override
                     public void call(Long progress, Long contentLength) {
