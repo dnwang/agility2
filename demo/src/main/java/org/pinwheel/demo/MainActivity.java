@@ -100,7 +100,7 @@ public final class MainActivity extends AbsTesterActivity {
     @Tester(title = "stop download")
     void tester6() {
         if (null != downloader) {
-            downloader.stop();
+            downloader.intercept();
         }
     }
 
