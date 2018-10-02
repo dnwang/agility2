@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Action2;
 import org.pinwheel.agility2.module.Downloader2;
 import org.pinwheel.agility2.utils.CommonTools;
@@ -47,18 +46,18 @@ public final class MainActivity extends AbsTesterActivity {
 
     @Tester(title = "start activity")
     void tester4() {
-        CommonTools.printTime("get activity", new Action0() {
+        CommonTools.printTime("get activity", new Runnable() {
             @Override
-            public void call() {
+            public void run() {
                 final Context ctx = CommonTools.getTopActivity();
                 if (null == ctx) {
                     LogUtils.d("--------> null");
                 }
             }
         });
-        CommonTools.printTime("starer", new Action0() {
+        CommonTools.printTime("starer", new Runnable() {
             @Override
-            public void call() {
+            public void run() {
 //                ActivityRouter.build(MainActivity.class).start();
                 Intent intent = new Intent(MainActivity.this, MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

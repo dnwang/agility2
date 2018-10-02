@@ -36,6 +36,9 @@ public final class Downloader2 {
         return new File(file.getAbsolutePath() + ".data");
     }
 
+    private static final int TIME_OUT = 30 * 1000;
+    private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+
     private String url;
     private File file;
     private int threadSize;
@@ -44,7 +47,7 @@ public final class Downloader2 {
     private Action2<Long, Long> progressAction;
 
     public Downloader2() {
-        threadSize = Runtime.getRuntime().availableProcessors();
+        this.threadSize = NUMBER_OF_CORES;
     }
 
     public Downloader2 fromUrl(String fromUrl) {
@@ -58,8 +61,7 @@ public final class Downloader2 {
     }
 
     public Downloader2 threadSize(int size) {
-        final int defCount = Runtime.getRuntime().availableProcessors();
-        threadSize = Math.min(Math.max(1, size), defCount * 2);
+        threadSize = Math.min(Math.max(1, size), NUMBER_OF_CORES * 2);
         return this;
     }
 
@@ -103,17 +105,22 @@ public final class Downloader2 {
 
     public Downloader2 start() {
         if (!isIntercepted()) {
+            dividerError(new IllegalStateException("downloader already started, please call intercept method first!"));
             return this;
         }
-        if (CommonTools.isEmpty(url) || null == file || file.exists()) {
-            dividerError(new IllegalStateException("downloader params error or target file already exists!"));
+        if (CommonTools.isEmpty(url)) {
+            dividerError(new IllegalStateException("download url error!"));
+            return this;
+        }
+        if (null == file || file.exists()) {
+            dividerError(new IllegalStateException("download target file is null or it already exists!"));
             return this;
         }
         AsyncHelper.INSTANCE.once(new Runnable() {
             @Override
             public void run() {
                 FileUtils.prepareDirs(file);
-                LogUtils.d(TAG, "preparing...");
+                LogUtils.d(TAG, "preparing... (connect remote resource)");
                 final ResourceInfo historyRes = ResourceInfo.load(getCfFile(file));
                 final ResourceInfo remoteRes = ResourceInfo.load(url);
                 // compare info
@@ -136,28 +143,30 @@ public final class Downloader2 {
                 // single thread
                 res.blocks.add(new Block(0, res.contentLength));
             } else {
+                final long u = res.contentLength / threadSize;
                 long begin = 0, end;
                 for (int i = 0; i < threadSize; i++) {
                     if (threadSize - 1 == i) {
                         // fix last worker end value
                         end = res.contentLength;
                     } else {
-                        end = res.contentLength / threadSize * (i + 1);
+                        end = u * (i + 1);
                     }
                     res.blocks.add(new Block(begin, end));
                     begin = end + 1;
                 }
             }
         }
-        // start workers
+        // init workers
         if (workers == null) {
             workers = new CopyOnWriteArrayList<>();
         }
         for (Block block : res.blocks) {
             if (!block.isAtEnd()) {
                 Worker worker = new Worker(block);
-                AsyncHelper.INSTANCE.once(worker);
                 workers.add(worker);
+                // start worker
+                AsyncHelper.INSTANCE.once(worker);
             }
         }
     }
@@ -189,7 +198,7 @@ public final class Downloader2 {
     private synchronized void onProgressChanged() {
         long progress = 0;
         for (Block block : res.blocks) {
-            progress += (block.offset - block.begin + 1);
+            progress += block.getProgress();
         }
         if (progressAction != null) {
             progressAction.call(progress, res.contentLength);
@@ -237,6 +246,8 @@ public final class Downloader2 {
             try {
                 conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestProperty("Accept-Encoding", "identity");
+                conn.setConnectTimeout(TIME_OUT);
+                conn.setReadTimeout(TIME_OUT / 2);
                 conn.setDoOutput(false);
                 conn.setDoInput(false);
                 contentLength = conn.getContentLength();
@@ -281,6 +292,8 @@ public final class Downloader2 {
     }
 
     private final static class Block implements Serializable {
+        static final long FLAG_END = -999;
+
         final long begin, end;
         long offset;
 
@@ -291,30 +304,36 @@ public final class Downloader2 {
         }
 
         boolean isAtEnd() {
-            return offset >= end;
+            return FLAG_END == offset;
+        }
+
+        long getProgress() {
+            return isAtEnd() ? (end - begin + 1) : (offset - begin + 1);
         }
     }
 
     private static int workerId = 0;
 
     private final class Worker implements Runnable {
-        private final static int TIME_OUT = 30 * 1000;
         private final static int BUF_SIZE = 1024;
         private final static int MAX_RETRY = 3;
+
+        final static int FLAG_INTERCEPT = -1;
+        final static int FLAG_COMPLETE = -2;
 
         private final int id;
         private final Block block;
 
-        private int retryCount;
+        private int flag;
 
         Worker(Block block) {
             this.block = block;
             this.id = workerId++;
-            this.retryCount = 0;
+            this.flag = 0;
         }
 
         void stop() {
-            retryCount = -1; // mark intercept
+            flag = FLAG_INTERCEPT; // mark intercept
             close();
         }
 
@@ -331,7 +350,7 @@ public final class Downloader2 {
         private InputStream inStream = null;
 
         private void getConnectionData() throws Exception {
-            LogUtils.d(TAG, "worker #" + id + ": open connection, times:" + retryCount);
+            LogUtils.d(TAG, "worker #" + id + ": open connection, times:" + flag);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(TIME_OUT);
             conn.setReadTimeout(TIME_OUT / 2);
@@ -358,7 +377,8 @@ public final class Downloader2 {
                     if (!block.isAtEnd()) {
                         getConnectionData();
                     }
-                    retryCount = -1; // mark end
+                    flag = FLAG_COMPLETE; // mark end
+                    block.offset = Block.FLAG_END;
                 } catch (Exception ignore) {
                     // nothing
                 } finally {
@@ -370,9 +390,8 @@ public final class Downloader2 {
         }
 
         boolean checkRetry() {
-            return retryCount >= 0 && ++retryCount < MAX_RETRY;
+            return flag >= 0 && ++flag <= MAX_RETRY;
         }
-
     }
 
 }

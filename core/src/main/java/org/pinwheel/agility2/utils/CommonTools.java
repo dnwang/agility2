@@ -33,7 +33,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
-import org.pinwheel.agility2.action.Action0;
 import org.pinwheel.agility2.action.Function1;
 import org.pinwheel.agility2.view.ViewHolder;
 
@@ -575,9 +574,9 @@ public final class CommonTools {
         return drawable;
     }
 
-    public static void printTime(String tag, Action0 action) {
+    public static void printTime(String tag, Runnable runnable) {
         long begin = System.currentTimeMillis();
-        action.call();
+        runnable.run();
         if (isEmpty(tag)) {
             LogUtils.d("printTime", (System.currentTimeMillis() - begin) + "ms");
         } else {
