@@ -59,6 +59,7 @@ abstract class AbsTesterActivity extends Activity {
                 ((Method) obj).invoke(AbsTesterActivity.this);
             } catch (Exception e) {
                 LogUtils.e(TAG, "Tester function invoke error: " + ((Method) obj).getName());
+                e.printStackTrace();
             }
         }
     };

@@ -9,7 +9,6 @@ import org.pinwheel.agility2.utils.LogUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
@@ -79,7 +78,6 @@ public final class Downloader2 {
             for (Worker worker : workers) {
                 worker.stop();
             }
-            workers.clear();
             ResourceInfo.save(res, getCfFile(file));
         }
     }
@@ -108,13 +106,14 @@ public final class Downloader2 {
             return this;
         }
         if (CommonTools.isEmpty(url) || null == file || file.exists()) {
-            dividerError(new IllegalStateException("downloader params state error!"));
+            dividerError(new IllegalStateException("downloader params error or target file already exists!"));
             return this;
         }
         AsyncHelper.INSTANCE.once(new Runnable() {
             @Override
             public void run() {
                 FileUtils.prepareDirs(file);
+                LogUtils.d(TAG, "preparing...");
                 final ResourceInfo historyRes = ResourceInfo.load(getCfFile(file));
                 final ResourceInfo remoteRes = ResourceInfo.load(url);
                 // compare info
@@ -155,9 +154,11 @@ public final class Downloader2 {
             workers = new CopyOnWriteArrayList<>();
         }
         for (Block block : res.blocks) {
-            Worker worker = new Worker(block);
-            AsyncHelper.INSTANCE.once(worker);
-            workers.add(worker);
+            if (!block.isAtEnd()) {
+                Worker worker = new Worker(block);
+                AsyncHelper.INSTANCE.once(worker);
+                workers.add(worker);
+            }
         }
     }
 
@@ -329,7 +330,8 @@ public final class Downloader2 {
         private HttpURLConnection conn = null;
         private InputStream inStream = null;
 
-        private void getConnectionData() throws IOException {
+        private void getConnectionData() throws Exception {
+            LogUtils.d(TAG, "worker #" + id + ": open connection, times:" + retryCount);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(TIME_OUT);
             conn.setReadTimeout(TIME_OUT / 2);
@@ -351,25 +353,24 @@ public final class Downloader2 {
 
         @Override
         public void run() {
-            try {
-                if (!block.isAtEnd()) {
-                    getConnectionData();
+            do {
+                try {
+                    if (!block.isAtEnd()) {
+                        getConnectionData();
+                    }
+                    retryCount = -1; // mark end
+                } catch (Exception ignore) {
+                    // nothing
+                } finally {
+                    close();
                 }
-                retryCount = -1; // mark end
-            } catch (Exception ignore) {
-                // nothing
-            } finally {
-                close();
-                // check retry
-                if (retryCount >= 0 && retryCount < MAX_RETRY) {
-                    retryCount++;
-                    LogUtils.e(TAG, "worker #" + id + ": retry " + retryCount);
-                    run();
-                } else {
-                    LogUtils.d(TAG, "worker #" + id + ": bye! ");
-                    onWorkerEnd(this);
-                }
-            }
+            } while (checkRetry());
+            LogUtils.d(TAG, "worker #" + id + ": bye! ");
+            onWorkerEnd(this);
+        }
+
+        boolean checkRetry() {
+            return retryCount >= 0 && ++retryCount < MAX_RETRY;
         }
 
     }
