@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "root": {
+    "type": "grid",
+    "width": 500,
+    "height": 300,
+    "row": 3,
+    "column": 5,
+    "items": [
+      {
+        "x": 0,
+        "y": 0,
+        "weightX": 3,
+        "weightY": 2
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "weightX": 1,
+        "weightY": 1
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "weightX": 1,
+        "weightY": 1
+      },
+      {
+        "x": 3,
+        "y": 1,
+        "weightX": 1,
+        "weightY": 1
+      },
+      {
+        "x": 4,
+        "y": 1,
+        "weightX": 1,
+        "weightY": 1
+      },
+      {
+        "type": "grid",
+        "x": 0,
+        "y": 2,
+        "weightX": 5,
+        "weightY": 1
+      }
+    ]
+  }
+}

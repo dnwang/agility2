@@ -103,4 +103,9 @@ public final class MainActivity extends AbsTesterActivity {
         }
     }
 
+    @Tester(title = "CellLayout")
+    void tester7() {
+        startActivity(new Intent(this, CellLayoutActivity.class));
+    }
+
 }
