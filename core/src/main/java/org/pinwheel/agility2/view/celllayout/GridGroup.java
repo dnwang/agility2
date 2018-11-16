@@ -1,5 +1,7 @@
 package org.pinwheel.agility2.view.celllayout;
 
+import org.json.JSONObject;
+
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -19,16 +21,24 @@ public class GridGroup extends CellGroup {
         super();
         this.row = row;
         this.column = column;
+        this.divider = 0;
+    }
+
+    GridGroup(JSONObject args) {
+        super(args);
+        this.row = args.optInt("row", 0);
+        this.column = args.optInt("column", 0);
+        this.divider = args.optInt("divider", 0);
     }
 
     @Override
     protected void setSize(int width, int height) {
         super.setSize(width, height);
-        final int size = getCellCount();
+        final int size = getSubCellCount();
         final int blockW = getWidth() / column;
         final int blockH = getHeight() / row;
         for (int i = 0; i < size; i++) {
-            Cell cell = getCell(i);
+            Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
             if (null == p) {
                 cell.setSize(0, 0);
@@ -41,16 +51,16 @@ public class GridGroup extends CellGroup {
     @Override
     protected void setPosition(int x, int y) {
         super.setPosition(x, y);
-        final int size = getCellCount();
+        final int size = getSubCellCount();
         final int blockW = getWidth() / column;
         final int blockH = getHeight() / row;
         for (int i = 0; i < size; i++) {
-            Cell cell = getCell(i);
+            Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
             if (null == p) {
-                cell.setPosition(x, y);
+                cell.setPosition(getLeft(), getTop());
             } else {
-                cell.setPosition(x + p.x * blockW, y + p.y * blockH);
+                cell.setPosition(getLeft() + p.x * blockW, getTop() + p.y * blockH);
             }
         }
     }
@@ -66,6 +76,13 @@ public class GridGroup extends CellGroup {
             this.weightX = weightX;
             this.weightY = weightY;
         }
-    }
 
+        Params(JSONObject args) {
+            super(args);
+            this.x = args.optInt("x", 0);
+            this.y = args.optInt("y", 0);
+            this.weightX = args.optInt("weightX", 0);
+            this.weightY = args.optInt("weightY", 0);
+        }
+    }
 }

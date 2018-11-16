@@ -1,6 +1,11 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.util.LongSparseArray;
+import android.view.ViewGroup;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Copyright (C), 2018 <br>
@@ -13,14 +18,17 @@ import android.util.LongSparseArray;
  */
 public class CellGroup extends Cell {
 
-    private final LongSparseArray<Cell> subCells;
+    private final List<Cell> subCells = new ArrayList<>();
 
     public CellGroup() {
         super();
-        this.subCells = new LongSparseArray<>();
     }
 
-    public void addCell(Cell cell, Params p) {
+    CellGroup(JSONObject args) {
+        super(args);
+    }
+
+    void addCellNoAttach(Cell cell, Params p) {
         final long id = null == cell ? -1 : cell.getId();
         if (id <= 0) {
             throw new IllegalStateException("cell id error !");
@@ -28,57 +36,77 @@ public class CellGroup extends Cell {
         if (null != cell.getOwner()) {
             throw new IllegalStateException("already has owner !");
         }
-        cell.setParams(p);
+        subCells.add(cell);
         cell.setOwner(this);
-        subCells.put(id, cell);
+        cell.setParams(p);
     }
 
-    public Cell removeCell(long id) {
-        if (id <= 0) {
-            throw new IllegalStateException("cell id error !");
-        }
-        final Cell cell = subCells.get(id);
+    public void addCell(Cell cell, Params p) {
+        addCellNoAttach(cell, p);
+        cell.attach(getDirector());
+    }
+
+    public Cell removeCell(Cell cell) {
         if (null == cell) {
-            throw new IllegalStateException("group can't find special cell by id ! id: " + id);
+            throw new IllegalStateException("can't find empty cell !");
         }
-        subCells.delete(id);
-        cell.setOwner(null);
+        final boolean has = subCells.contains(cell);
+        if (!has) {
+            throw new IllegalStateException("group can't find special cell !");
+        }
+        subCells.remove(cell);
+        cell.detach();
         return cell;
     }
 
-    public Cell getCell(int index) {
-        return subCells.valueAt(index);
+    public Cell getCellAt(int order) {
+        return subCells.get(order);
     }
 
-    public Cell findCell(long id) {
-        Cell cell = subCells.get(id);
-        if (null != cell) {
-            return cell;
-        } else {
-            final int size = getCellCount();
-            for (int i = 0; i < size; i++) {
-                Cell subCell = getCell(i);
-                if (subCell instanceof CellGroup) {
-                    cell = ((CellGroup) subCell).findCell(id);
+    public Cell findCellById(long id) {
+        Cell target = getId() == id ? this : null;
+        if (null == target) {
+            for (Cell cell : subCells) {
+                if (cell.getId() == id) {
+                    target = cell;
+                    break;
+                } else if (cell instanceof CellGroup) {
+                    cell = ((CellGroup) cell).findCellById(id);
                     if (null != cell) {
                         break;
                     }
                 }
             }
-            return cell;
         }
+        return target;
     }
 
-    public int getCellCount() {
+    public int getSubCellCount() {
         return subCells.size();
     }
 
-    @Override
-    public void refresh() {
-        final int size = getCellCount();
+    private int scrollX, scrollY;
+
+    public void scrollBy(int dx, int dy) {
+        final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
-            getCell(i).refresh();
+            Cell cell = getCellAt(i);
+            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
         }
+        scrollX += dx;
+        scrollY += dy;
+    }
+
+    public void scrollTo(int x, int y) {
+        int dx = x - (getLeft() + scrollX);
+        int dy = y - (getLeft() + scrollY);
+        final int size = getSubCellCount();
+        for (int i = 0; i < size; i++) {
+            Cell cell = getCellAt(i);
+            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
+        }
+        scrollX = x;
+        scrollY = y;
     }
 
     public static class Params {
@@ -88,6 +116,15 @@ public class CellGroup extends Cell {
         public Params(int width, int height) {
             this.width = width;
             this.height = height;
+        }
+
+        Params(JSONObject args) {
+            this.width = args.optInt("width", ViewGroup.LayoutParams.MATCH_PARENT);
+            this.height = args.optInt("height", ViewGroup.LayoutParams.MATCH_PARENT);
+            this.marginLeft = args.optInt("marginLeft", 0);
+            this.marginTop = args.optInt("marginTop", 0);
+            this.marginRight = args.optInt("marginRight", 0);
+            this.marginBottom = args.optInt("marginBottom", 0);
         }
     }
 

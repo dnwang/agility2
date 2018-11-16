@@ -2,6 +2,8 @@ package org.pinwheel.agility2.view.celllayout;
 
 import android.graphics.Rect;
 
+import org.json.JSONObject;
+
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -14,13 +16,17 @@ import android.graphics.Rect;
 public class Cell {
 
     private static long ID_OFFSET = 0;
-
-    public int paddingLeft, paddingTop, paddingRight, paddingBottom;
-
     private final long id;
+    //
+    private CellDirector director;
+    //
+    public int paddingLeft, paddingTop, paddingRight, paddingBottom;
+    //
     private int x, y;
     private int width, height;
-
+    //
+    private boolean stateVisible;
+    //
     private CellGroup.Params p;
     private CellGroup owner;
 
@@ -28,8 +34,25 @@ public class Cell {
         this.id = ++ID_OFFSET;
     }
 
-    public long getId() {
-        return id;
+    Cell(JSONObject args) {
+        this();
+        paddingLeft = args.optInt("paddingLeft", 0);
+        paddingTop = args.optInt("paddingTop", 0);
+        paddingRight = args.optInt("paddingRight", 0);
+        paddingBottom = args.optInt("paddingBottom", 0);
+    }
+
+    void attach(CellDirector director) {
+        this.director = director;
+        this.director.notifyAttached(this);
+    }
+
+    void detach() {
+        this.director.notifyDetached(this);
+        director = null;
+        owner = null;
+        p = null;
+        stateVisible = false;
     }
 
     protected void setSize(int width, int height) {
@@ -40,6 +63,10 @@ public class Cell {
     protected void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
+    }
+
+    public long getId() {
+        return id;
     }
 
     public int getLeft() {
@@ -86,7 +113,21 @@ public class Cell {
         return owner;
     }
 
-    public void refresh() {
+    public CellDirector getDirector() {
+        return director;
+    }
+
+    public boolean isVisible() {
+        return stateVisible;
+    }
+
+    public void setVisible(boolean is) {
+        this.stateVisible = is;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(id);
     }
 
     @Override

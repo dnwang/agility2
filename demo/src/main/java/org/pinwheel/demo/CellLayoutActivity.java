@@ -3,11 +3,14 @@ package org.pinwheel.demo;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.TextView;
 
 import org.json.JSONObject;
 import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.view.celllayout.Cell;
+import org.pinwheel.agility2.view.celllayout.CellFactory;
 import org.pinwheel.agility2.view.celllayout.CellLayout;
 
 /**
@@ -27,33 +30,29 @@ public final class CellLayoutActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getTestLayout());
-
-        cellLayout.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));
-                    cellLayout.load(new JSONObject(jsonString));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 1000);
+        try {
+            String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));
+            cellLayout.setRoot(CellFactory.load(new JSONObject(jsonString)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private CellLayout getTestLayout() {
         cellLayout = new CellLayout(this);
-        cellLayout.setBackgroundColor(Color.DKGRAY);
+        cellLayout.setBackgroundColor(Color.BLACK);
         cellLayout.setAdapter(new CellLayout.Adapter() {
             @Override
             public View onCreateView(Cell cell) {
-                View view = new View(CellLayoutActivity.this);
-                view.setBackgroundColor(Color.rgb(
+                TextView text = new TextView(CellLayoutActivity.this);
+                text.setText(String.valueOf(cell.getId()));
+                text.setGravity(Gravity.CENTER);
+                text.setBackgroundColor(Color.rgb(
                         (int) (Math.random() * 255),
                         (int) (Math.random() * 255),
                         (int) (Math.random() * 255)
                 ));
-                return view;
+                return text;
             }
 
             @Override
