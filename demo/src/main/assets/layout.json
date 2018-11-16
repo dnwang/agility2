@@ -8,14 +8,14 @@
     "cells": [
       {
         "type": "cell",
-        "height": 100
+        "height": 200
       },
       {
         "type": "grid",
         "row": 4,
         "column": 5,
         "divider": 20,
-        "height": 300,
+        "height": 800,
         "cells": [
           {
             "type": "cell",
@@ -63,7 +63,7 @@
             "row": 2,
             "column": 2,
             "divider": 10,
-            "cell": [
+            "cells": [
               {
                 "type": "cell",
                 "x": 0,
@@ -104,23 +104,64 @@
             "cells": [
               {
                 "type": "cell",
+                "width": 500
+              },
+              {
+                "type": "grid",
+                "width": 700,
+                "row": 2,
+                "column": 2,
+                "divider": 10,
+                "cells": [
+                  {
+                    "type": "cell",
+                    "x": 0,
+                    "y": 0,
+                    "weightX": 1,
+                    "weightY": 1
+                  },
+                  {
+                    "type": "cell",
+                    "x": 1,
+                    "y": 0,
+                    "weightX": 1,
+                    "weightY": 1
+                  },
+                  {
+                    "type": "cell",
+                    "x": 0,
+                    "y": 1,
+                    "weightX": 1,
+                    "weightY": 1
+                  },
+                  {
+                    "type": "cell",
+                    "x": 1,
+                    "y": 1,
+                    "weightX": 1,
+                    "weightY": 1
+                  }
+                ]
+              },
+              {
+                "type": "cell",
+                "width": 300
+              },
+              {
+                "type": "cell",
+                "width": 300
+              },
+              {
+                "type": "cell",
+                "width": 300
+              },
+              {
+                "type": "cell",
                 "width": 100
               },
               {
                 "type": "cell",
                 "width": 200
-              },
-              {
-                "type": "cell",
-                "width": 50
-              },
-              {
-                "type": "cell",
-                "width": 400
-              },
-              {
-                "type": "cell",
-                "width": 100
               }
             ]
           }
@@ -128,7 +169,7 @@
       },
       {
         "type": "cell",
-        "height": 100
+        "height": 200
       }
     ]
   }

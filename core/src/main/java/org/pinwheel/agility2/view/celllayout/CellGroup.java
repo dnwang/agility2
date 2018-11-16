@@ -71,8 +71,8 @@ public class CellGroup extends Cell {
                     target = cell;
                     break;
                 } else if (cell instanceof CellGroup) {
-                    cell = ((CellGroup) cell).findCellById(id);
-                    if (null != cell) {
+                    target = ((CellGroup) cell).findCellById(id);
+                    if (null != target) {
                         break;
                     }
                 }
@@ -107,6 +107,24 @@ public class CellGroup extends Cell {
         }
         scrollX = x;
         scrollY = y;
+    }
+
+    @Override
+    public int getLeft() {
+        return super.getLeft() + getScrollX();
+    }
+
+    @Override
+    public int getTop() {
+        return super.getTop() + getScrollY();
+    }
+
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    public int getScrollY() {
+        return scrollY;
     }
 
     public static class Params {

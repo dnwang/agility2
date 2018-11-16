@@ -2,16 +2,15 @@ package org.pinwheel.agility2.view.celllayout;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.PointF;
 import android.os.Build;
-import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.LongSparseArray;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Copyright (C), 2018 <br>
@@ -47,7 +46,7 @@ public class CellLayout extends ViewGroup {
         this.init();
     }
 
-    private List<Holder> cellViewHolder = new ArrayList<>();
+    private LongSparseArray<View> cellViewHolder = new LongSparseArray<>();
 
     private final CellDirector director = new CellDirector();
     private Adapter adapter;
@@ -57,9 +56,17 @@ public class CellLayout extends ViewGroup {
         public void onAttached(Cell cell) {
             if (!(cell instanceof CellGroup)) {
                 Log.e(TAG, "onAttached: " + cell);
-                Holder holder = new Holder(adapter.onCreateView(cell), cell);
-                addView(holder.view);
-                cellViewHolder.add(holder);
+                View view = adapter.onCreateView(cell);
+                addView(view);
+                cellViewHolder.put(cell.getId(), view);
+            }
+        }
+
+        @Override
+        public void onPositionChanged(Cell cell) {
+            View view = cellViewHolder.get(cell.getId());
+            if (null != view) {
+                view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
             }
         }
 
@@ -71,7 +78,7 @@ public class CellLayout extends ViewGroup {
         @Override
         public void onDetached(Cell cell) {
             Log.e(TAG, "onDetached: " + cell);
-            cellViewHolder.remove(new Holder(null, cell));
+            cellViewHolder.remove(cell.getId());
         }
     };
 
@@ -91,49 +98,125 @@ public class CellLayout extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        director.measure(getMeasuredWidth(), getMeasuredHeight());
+        if (!director.hasRoot()) {
+            return;
+        }
+        director.getRoot().setSize(getMeasuredWidth(), getMeasuredHeight());
         // sync view
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
-            Holder holder = cellViewHolder.get(i);
-            Cell cell = holder.cell;
-            holder.view.measure(cell.getWidth(), cell.getHeight());
+            View view = getChildAt(i);
+            long cellId = cellViewHolder.keyAt(cellViewHolder.indexOfValue(view));
+            Cell cell = director.findCellById(cellId);
+            view.measure(cell.getWidth(), cell.getHeight());
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        director.layout(l, t, r, b);
+        if (!director.hasRoot()) {
+            return;
+        }
+        director.getRoot().setPosition(l, t);
         // sync view
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
-            Holder holder = cellViewHolder.get(i);
-            Cell cell = holder.cell;
-            holder.view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
+            View view = getChildAt(i);
+            Cell cell = director.findCellById(cellViewHolder.keyAt(cellViewHolder.indexOfValue(view)));
+            view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
         }
     }
 
-    private static class Holder {
-        View view;
-        Cell cell;
-        Bundle args;
+    private static final int MOVE_SLOP = 10;
 
-        Holder(View view, Cell cell) {
-            this.view = view;
-            this.cell = cell;
+    private final PointF lastPoint = new PointF();
+    private Cell moveTarget;
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        boolean superState = super.onInterceptTouchEvent(event);
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                return superState;
+            case MotionEvent.ACTION_MOVE:
+                return true;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                return superState;
+            default:
+                return superState;
         }
+    }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Holder that = (Holder) o;
-            return cell.equals(that.cell);
+    private int movingOrientation = -1;
+    private int tmpOrientation = -1;
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        boolean superState = super.onTouchEvent(event);
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                lastPoint.set(event.getX(), event.getY());
+                findMoveCell((int) lastPoint.x, (int) lastPoint.y);
+                if (null != moveTarget) {
+                    tmpOrientation = ((LinearGroup) moveTarget).getOrientation();
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (movingOrientation < 0 || movingOrientation == tmpOrientation) {
+                    movingOrientation = tmpOrientation;
+                    float xDiff = event.getX() - lastPoint.x;
+                    float yDiff = event.getY() - lastPoint.y;
+                    float absXDiff = Math.abs(xDiff);
+                    float absYDiff = Math.abs(yDiff);
+                    if (movingOrientation == LinearGroup.HORIZONTAL && absXDiff > absYDiff) {
+                        moveCell(moveTarget, (int) xDiff, 0);
+                    } else if (movingOrientation == LinearGroup.VERTICAL && absYDiff > absXDiff) {
+                        moveCell(moveTarget, 0, (int) yDiff);
+                    }
+                }
+                lastPoint.set(event.getX(), event.getY());
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                moveTarget = null;
+                movingOrientation = -1;
+                tmpOrientation = -1;
+                break;
+            default:
+                return superState;
         }
+        return true;
+    }
 
-        @Override
-        public int hashCode() {
-            return cell.hashCode();
+    protected final void moveCell(Cell target, int dx, int dy) {
+        if (target instanceof CellGroup) {
+            ((CellGroup) target).scrollBy(dx, dy);
+        }
+    }
+
+    private void findMoveCell(final int x, final int y) {
+        director.foreachAllCell(director.getRoot(), new CellDirector.CellFilter() {
+            @Override
+            public boolean call(Cell cell) {
+                if (!(cell instanceof CellGroup) && cell.getRect().contains(x, y)) {
+                    moveTarget = findLinearGroupBy(cell);
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private Cell findLinearGroupBy(Cell cell) {
+        Cell owner = null != cell ? cell.getOwner() : null;
+        if (owner instanceof LinearGroup) {
+            return owner;
+        } else if (null != owner) {
+            return findLinearGroupBy(owner);
+        } else {
+            return null;
         }
     }
 

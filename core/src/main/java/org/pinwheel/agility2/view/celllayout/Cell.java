@@ -61,12 +61,23 @@ public class Cell {
     }
 
     protected void setPosition(int x, int y) {
+        if (this.x != x || this.y != y) {
+            director.notifyPositionChanged(this);
+        }
         this.x = x;
         this.y = y;
     }
 
     public long getId() {
         return id;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
     }
 
     public int getLeft() {
@@ -78,15 +89,15 @@ public class Cell {
     }
 
     public int getRight() {
-        return x + width;
+        return getLeft() + getWidth();
     }
 
     public int getBottom() {
-        return y + height;
+        return getTop() + getHeight();
     }
 
     public Rect getRect() {
-        return new Rect(x, y, x + width, y + height);
+        return new Rect(getLeft(), getTop(), getRight(), getBottom());
     }
 
     public int getWidth() {
@@ -123,6 +134,7 @@ public class Cell {
 
     public void setVisible(boolean is) {
         this.stateVisible = is;
+        director.notifyVisibleChanged(this);
     }
 
     @Override

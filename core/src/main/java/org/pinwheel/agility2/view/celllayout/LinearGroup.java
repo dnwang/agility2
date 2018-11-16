@@ -58,7 +58,12 @@ public class LinearGroup extends CellGroup {
     protected void setPosition(int x, int y) {
         super.setPosition(x, y);
         final int size = getSubCellCount();
-        int tmp = 0;
+        int tmp;
+        if (HORIZONTAL == orientation) {
+            tmp = getLeft();
+        } else {
+            tmp = getTop();
+        }
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (LinearGroup.Params) cell.getParams();
@@ -68,14 +73,16 @@ public class LinearGroup extends CellGroup {
                 if (HORIZONTAL == orientation) {
                     cell.setPosition(tmp, getTop());
                     tmp += cell.getWidth();
-                } else if (VERTICAL == orientation) {
+                } else {
                     cell.setPosition(getLeft(), tmp);
                     tmp += cell.getHeight();
-                } else {
-                    cell.setPosition(getLeft(), getTop());
                 }
             }
         }
+    }
+
+    public int getOrientation() {
+        return orientation;
     }
 
     public static class Params extends CellGroup.Params {

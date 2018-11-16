@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.Window;
 import android.widget.TextView;
 
 import org.json.JSONObject;
@@ -29,6 +30,7 @@ public final class CellLayoutActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         setContentView(getTestLayout());
         try {
             String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));

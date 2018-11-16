@@ -14,6 +14,10 @@ final class CellDirector {
     private Cell root;
     private LifeCycleCallback callback;
 
+    boolean hasRoot() {
+        return null != root;
+    }
+
     void setRoot(Cell cell) {
         if (null != root) {
             // detach
@@ -41,26 +45,16 @@ final class CellDirector {
         }
     }
 
+    public Cell getRoot() {
+        return root;
+    }
+
     Cell findCellById(long id) {
         if (root instanceof CellGroup) {
             return ((CellGroup) root).findCellById(id);
         } else {
             return root.getId() == id ? root : null;
         }
-    }
-
-    void measure(int measureWidth, int measureHeight) {
-        if (null == root) {
-            return;
-        }
-        root.setSize(measureWidth, measureHeight);
-    }
-
-    void layout(int l, int t, int r, int b) {
-        if (null == root) {
-            return;
-        }
-        root.setPosition(l, t);
     }
 
     void setCallback(LifeCycleCallback callback) {
@@ -75,11 +69,15 @@ final class CellDirector {
         callback.onDetached(cell);
     }
 
+    void notifyPositionChanged(Cell cell) {
+        callback.onPositionChanged(cell);
+    }
+
     void notifyVisibleChanged(Cell cell) {
         callback.onVisibleChanged(cell);
     }
 
-    private boolean foreachAllCell(Cell root, CellFilter filter) {
+    boolean foreachAllCell(Cell root, CellFilter filter) {
         boolean intercept = false;
         if (root instanceof CellGroup) {
             intercept = filter.call(root);
@@ -99,12 +97,14 @@ final class CellDirector {
         return intercept;
     }
 
-    private interface CellFilter {
+    public interface CellFilter {
         boolean call(Cell cell);
     }
 
     interface LifeCycleCallback {
         void onAttached(Cell cell);
+
+        void onPositionChanged(Cell cell);
 
         void onVisibleChanged(Cell cell);
 

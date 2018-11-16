@@ -66,8 +66,8 @@ public class GridGroup extends CellGroup {
     }
 
     public static class Params extends CellGroup.Params {
-        final int x, y;
-        final int weightX, weightY;
+        int x, y;
+        int weightX, weightY;
 
         public Params(int x, int y, int weightX, int weightY) {
             super(0, 0);
