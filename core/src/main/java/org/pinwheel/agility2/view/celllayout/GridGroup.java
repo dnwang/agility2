@@ -19,44 +19,47 @@ public class GridGroup extends CellGroup {
 
     public GridGroup(int row, int column) {
         super();
-        this.row = row;
-        this.column = column;
+        this.row = Math.max(1, row);
+        this.column = Math.max(1, column);
         this.divider = 0;
     }
 
     GridGroup(JSONObject args) {
         super(args);
-        this.row = args.optInt("row", 0);
-        this.column = args.optInt("column", 0);
+        this.row = args.optInt("row", 1);
+        this.column = args.optInt("column", 1);
         this.divider = args.optInt("divider", 0);
     }
 
     @Override
     protected void setSize(int width, int height) {
         super.setSize(width, height);
-        final int blockW = getWidth() / column;
-        final int blockH = getHeight() / row;
+        final int bW = (int) ((getWidth() - paddingLeft - paddingRight - (column - 1) * divider) * 1f / column);
+        final int bH = (int) ((getHeight() - paddingTop - paddingBottom - (row - 1) * divider) * 1f / row);
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
-            cell.setSize(blockW * p.weightX, blockH * p.weightY);
+            int w = bW * p.weightX + (p.weightX - 1) * divider - (p.marginLeft + p.marginRight);
+            int h = bH * p.weightY + (p.weightY - 1) * divider - (p.marginTop + p.marginBottom);
+            cell.setSize(w, h);
         }
     }
 
     @Override
     protected void setPosition(int x, int y) {
         super.setPosition(x, y);
-        final int blockW = getWidth() / column;
-        final int blockH = getHeight() / row;
+        final int bW = (int) ((getWidth() - paddingLeft - paddingRight - (column - 1) * divider) * 1f / column);
+        final int bH = (int) ((getHeight() - paddingTop - paddingBottom - (row - 1) * divider) * 1f / row);
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
-            cell.setPosition(
-                    getLeft() + getScrollX() + p.x * blockW,
-                    getTop() + getScrollY() + p.y * blockH
-            );
+            int left = getLeft() + paddingLeft + p.marginLeft;
+            left += p.x * (divider + bW);
+            int top = getTop() + paddingTop + p.marginTop;
+            top += p.y * (divider + bH);
+            cell.setPosition(left, top);
         }
     }
 

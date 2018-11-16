@@ -95,7 +95,7 @@ public class CellLayout extends ViewGroup {
     }
 
     public void setRoot(CellGroup root) {
-        director.setRoot(root);
+        director.attach(root);
         requestLayout();
     }
 
@@ -137,14 +137,11 @@ public class CellLayout extends ViewGroup {
         return true;
     }
 
-    private static final int MOVE_SLOP = 10;
-
-    private LinearGroup moveCell;
-
+    private Movable moveTarget = null;
     private final Point tmpPoint = new Point();
 
     public boolean isMoving() {
-        return null != moveCell;
+        return null != moveTarget;
     }
 
     @Override
@@ -159,19 +156,13 @@ public class CellLayout extends ViewGroup {
                 if (isMoving()) {
                     int dx = (int) event.getX() - tmpPoint.x;
                     int dy = (int) event.getY() - tmpPoint.y;
-                    int absDx = Math.abs(dx);
-                    int absDy = Math.abs(dy);
-                    if (LinearGroup.HORIZONTAL == moveCell.getOrientation() && absDx > MOVE_SLOP) {
-                        moveCell(moveCell, dx, 0);
-                    } else if (LinearGroup.VERTICAL == moveCell.getOrientation() && absDy > MOVE_SLOP) {
-                        moveCell(moveCell, 0, dy);
-                    }
+                    moveCell(moveTarget, dx, dy);
                     tmpPoint.set((int) event.getX(), (int) event.getY());
                 }
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                moveCell = null;
+                moveTarget = null;
                 break;
             default:
                 return superState;
@@ -179,18 +170,18 @@ public class CellLayout extends ViewGroup {
         return true;
     }
 
-    protected final void moveCell(CellGroup cell, int dx, int dy) {
+    protected final void moveCell(Movable target, int dx, int dy) {
         if (0 != dx) {
-            if (dx > -cell.getScrollX()) {
-                dx = -cell.getScrollX();
+            if (dx > -target.getScrollX()) {
+                dx = -target.getScrollX();
             }
         }
         if (0 != dy) {
-            if (dy > -cell.getScrollY()) {
-                dy = -cell.getScrollY();
+            if (dy > -target.getScrollY()) {
+                dy = -target.getScrollY();
             }
         }
-        cell.scrollBy(dx, dy);
+        target.scrollBy(dx, dy);
     }
 
     private void findLinearGroupBy(final int x, final int y) {
@@ -198,7 +189,7 @@ public class CellLayout extends ViewGroup {
             @Override
             public boolean call(Cell cell) {
                 if (cell.getRect().contains(x, y)) {
-                    moveCell = findLinearGroupBy(cell);
+                    moveTarget = findLinearGroupBy(cell);
                     return true;
                 }
                 return false;
@@ -206,10 +197,10 @@ public class CellLayout extends ViewGroup {
         });
     }
 
-    private LinearGroup findLinearGroupBy(Cell cell) {
+    private Movable findLinearGroupBy(Cell cell) {
         Cell owner = null != cell ? cell.getOwner() : null;
-        if (owner instanceof LinearGroup) {
-            return (LinearGroup) owner;
+        if (owner instanceof Movable) {
+            return (Movable) owner;
         } else if (null != owner) {
             return findLinearGroupBy(owner);
         } else {

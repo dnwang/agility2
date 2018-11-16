@@ -18,7 +18,7 @@ final class CellDirector {
         return null != root;
     }
 
-    void setRoot(CellGroup group) {
+    void attach(CellGroup group) {
         if (null != root) {
             // detach old
             root.foreachAllCells(true, new Filter() {
@@ -42,7 +42,7 @@ final class CellDirector {
         }
     }
 
-    public CellGroup getRoot() {
+    CellGroup getRoot() {
         return root;
     }
 

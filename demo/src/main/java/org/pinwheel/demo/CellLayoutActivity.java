@@ -43,7 +43,7 @@ public final class CellLayoutActivity extends Activity {
 
     private CellLayout getTestLayout() {
         cellLayout = new CellLayout(this);
-        cellLayout.setBackgroundColor(Color.BLACK);
+        cellLayout.setBackgroundColor(Color.LTGRAY);
         cellLayout.setAdapter(new CellLayout.Adapter() {
             @Override
             public View onCreateView(Cell cell) {

@@ -67,44 +67,6 @@ public class CellGroup extends Cell {
         return subCells.size();
     }
 
-    private int scrollX, scrollY;
-
-    public void scrollBy(int dx, int dy) {
-        if (0 == dx && 0 == dy) {
-            return;
-        }
-        final int size = getSubCellCount();
-        for (int i = 0; i < size; i++) {
-            Cell cell = getCellAt(i);
-            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
-        }
-        scrollX += dx;
-        scrollY += dy;
-    }
-
-    public void scrollTo(int x, int y) {
-        if (scrollX == x && scrollY == y) {
-            return;
-        }
-        int dx = x - (getLeft() + scrollX);
-        int dy = y - (getLeft() + scrollY);
-        final int size = getSubCellCount();
-        for (int i = 0; i < size; i++) {
-            Cell cell = getCellAt(i);
-            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
-        }
-        scrollX = x;
-        scrollY = y;
-    }
-
-    public int getScrollX() {
-        return scrollX;
-    }
-
-    public int getScrollY() {
-        return scrollY;
-    }
-
     public final Cell findCellById(long id) {
         Cell target = getId() == id ? this : null;
         if (null == target) {
