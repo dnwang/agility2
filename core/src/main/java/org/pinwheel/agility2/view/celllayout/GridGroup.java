@@ -34,34 +34,29 @@ public class GridGroup extends CellGroup {
     @Override
     protected void setSize(int width, int height) {
         super.setSize(width, height);
-        final int size = getSubCellCount();
         final int blockW = getWidth() / column;
         final int blockH = getHeight() / row;
+        final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
-            if (null == p) {
-                cell.setSize(0, 0);
-            } else {
-                cell.setSize(blockW * p.weightX, blockH * p.weightY);
-            }
+            cell.setSize(blockW * p.weightX, blockH * p.weightY);
         }
     }
 
     @Override
     protected void setPosition(int x, int y) {
         super.setPosition(x, y);
-        final int size = getSubCellCount();
         final int blockW = getWidth() / column;
         final int blockH = getHeight() / row;
+        final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
-            if (null == p) {
-                cell.setPosition(getLeft(), getTop());
-            } else {
-                cell.setPosition(getLeft() + p.x * blockW, getTop() + p.y * blockH);
-            }
+            cell.setPosition(
+                    getLeft() + getScrollX() + p.x * blockW,
+                    getTop() + getScrollY() + p.y * blockH
+            );
         }
     }
 

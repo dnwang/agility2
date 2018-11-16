@@ -40,16 +40,10 @@ public class LinearGroup extends CellGroup {
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (LinearGroup.Params) cell.getParams();
-            if (null == p) {
-                cell.setSize(0, 0);
+            if (HORIZONTAL == orientation) {
+                cell.setSize(p.width, height);
             } else {
-                if (HORIZONTAL == orientation) {
-                    cell.setSize(p.width, height);
-                } else if (VERTICAL == orientation) {
-                    cell.setSize(width, p.height);
-                } else {
-                    cell.setSize(p.width, p.height);
-                }
+                cell.setSize(width, p.height);
             }
         }
     }
@@ -57,26 +51,21 @@ public class LinearGroup extends CellGroup {
     @Override
     protected void setPosition(int x, int y) {
         super.setPosition(x, y);
-        final int size = getSubCellCount();
         int tmp;
         if (HORIZONTAL == orientation) {
-            tmp = getLeft();
+            tmp = getLeft() + getScrollX();
         } else {
-            tmp = getTop();
+            tmp = getTop() + getScrollY();
         }
+        final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
-            Params p = (LinearGroup.Params) cell.getParams();
-            if (null == p) {
-                cell.setPosition(getLeft(), getTop());
+            if (HORIZONTAL == orientation) {
+                cell.setPosition(tmp, getTop());
+                tmp += cell.getWidth();
             } else {
-                if (HORIZONTAL == orientation) {
-                    cell.setPosition(tmp, getTop());
-                    tmp += cell.getWidth();
-                } else {
-                    cell.setPosition(getLeft(), tmp);
-                    tmp += cell.getHeight();
-                }
+                cell.setPosition(getLeft(), tmp);
+                tmp += cell.getHeight();
             }
         }
     }

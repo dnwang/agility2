@@ -63,7 +63,49 @@ public class CellGroup extends Cell {
         return subCells.get(order);
     }
 
-    public Cell findCellById(long id) {
+    public int getSubCellCount() {
+        return subCells.size();
+    }
+
+    private int scrollX, scrollY;
+
+    public void scrollBy(int dx, int dy) {
+        if (0 == dx && 0 == dy) {
+            return;
+        }
+        final int size = getSubCellCount();
+        for (int i = 0; i < size; i++) {
+            Cell cell = getCellAt(i);
+            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
+        }
+        scrollX += dx;
+        scrollY += dy;
+    }
+
+    public void scrollTo(int x, int y) {
+        if (scrollX == x && scrollY == y) {
+            return;
+        }
+        int dx = x - (getLeft() + scrollX);
+        int dy = y - (getLeft() + scrollY);
+        final int size = getSubCellCount();
+        for (int i = 0; i < size; i++) {
+            Cell cell = getCellAt(i);
+            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
+        }
+        scrollX = x;
+        scrollY = y;
+    }
+
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    public int getScrollY() {
+        return scrollY;
+    }
+
+    public final Cell findCellById(long id) {
         Cell target = getId() == id ? this : null;
         if (null == target) {
             for (Cell cell : subCells) {
@@ -81,50 +123,37 @@ public class CellGroup extends Cell {
         return target;
     }
 
-    public int getSubCellCount() {
-        return subCells.size();
-    }
-
-    private int scrollX, scrollY;
-
-    public void scrollBy(int dx, int dy) {
+    public final void foreachSubCells(Filter filter) {
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
-            Cell cell = getCellAt(i);
-            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
+            if (filter.call(getCellAt(i))) {
+                break;
+            }
         }
-        scrollX += dx;
-        scrollY += dy;
     }
 
-    public void scrollTo(int x, int y) {
-        int dx = x - (getLeft() + scrollX);
-        int dy = y - (getLeft() + scrollY);
-        final int size = getSubCellCount();
+    public final void foreachAllCells(boolean withGroup, Filter filter) {
+        _foreachAllCells(withGroup, this, filter);
+    }
+
+    private boolean _foreachAllCells(boolean withGroup, CellGroup group, Filter filter) {
+        boolean intercept = withGroup && filter.call(group);
+        if (intercept) {
+            return true;
+        }
+        final int size = group.getSubCellCount();
         for (int i = 0; i < size; i++) {
-            Cell cell = getCellAt(i);
-            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
+            Cell cell = group.getCellAt(i);
+            if (cell instanceof CellGroup) {
+                intercept = _foreachAllCells(withGroup, (CellGroup) cell, filter);
+            } else {
+                intercept = filter.call(cell);
+            }
+            if (intercept) {
+                break;
+            }
         }
-        scrollX = x;
-        scrollY = y;
-    }
-
-    @Override
-    public int getLeft() {
-        return super.getLeft() + getScrollX();
-    }
-
-    @Override
-    public int getTop() {
-        return super.getTop() + getScrollY();
-    }
-
-    public int getScrollX() {
-        return scrollX;
-    }
-
-    public int getScrollY() {
-        return scrollY;
+        return intercept;
     }
 
     public static class Params {

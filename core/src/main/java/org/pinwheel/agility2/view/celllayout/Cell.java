@@ -48,11 +48,17 @@ public class Cell {
     }
 
     void detach() {
-        this.director.notifyDetached(this);
-        director = null;
         owner = null;
         p = null;
         stateVisible = false;
+        director.notifyDetached(this);
+        director = null;
+    }
+
+    void removeFromOwner() {
+        if (null != owner) {
+            owner.removeCell(this);
+        }
     }
 
     protected void setSize(int width, int height) {
@@ -61,23 +67,18 @@ public class Cell {
     }
 
     protected void setPosition(int x, int y) {
-        if (this.x != x || this.y != y) {
-            director.notifyPositionChanged(this);
+        if (this.x == x && this.y == y) {
+            return;
         }
+        int fromX = this.x;
+        int fromY = this.y;
         this.x = x;
         this.y = y;
+        director.notifyPositionChanged(this, fromX, fromY);
     }
 
     public long getId() {
         return id;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
     }
 
     public int getLeft() {
@@ -133,7 +134,10 @@ public class Cell {
     }
 
     public void setVisible(boolean is) {
-        this.stateVisible = is;
+        if (stateVisible == is) {
+            return;
+        }
+        stateVisible = is;
         director.notifyVisibleChanged(this);
     }
 

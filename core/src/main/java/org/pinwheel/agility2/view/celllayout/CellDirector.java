@@ -11,31 +11,28 @@ package org.pinwheel.agility2.view.celllayout;
  */
 final class CellDirector {
 
-    private Cell root;
+    private CellGroup root;
     private LifeCycleCallback callback;
 
     boolean hasRoot() {
         return null != root;
     }
 
-    void setRoot(Cell cell) {
+    void setRoot(CellGroup group) {
         if (null != root) {
-            // detach
-            foreachAllCell(root, new CellFilter() {
+            // detach old
+            root.foreachAllCells(true, new Filter() {
                 @Override
                 public boolean call(Cell cell) {
-                    Cell owner = cell.getOwner();
-                    if (null != owner) {
-                        ((CellGroup) owner).removeCell(cell);
-                    }
+                    cell.removeFromOwner();
                     return false;
                 }
             });
         }
-        root = cell;
+        root = group;
         if (null != root) {
-            // attach
-            foreachAllCell(root, new CellFilter() {
+            // attach new
+            root.foreachAllCells(true, new Filter() {
                 @Override
                 public boolean call(Cell cell) {
                     cell.attach(CellDirector.this);
@@ -45,16 +42,8 @@ final class CellDirector {
         }
     }
 
-    public Cell getRoot() {
+    public CellGroup getRoot() {
         return root;
-    }
-
-    Cell findCellById(long id) {
-        if (root instanceof CellGroup) {
-            return ((CellGroup) root).findCellById(id);
-        } else {
-            return root.getId() == id ? root : null;
-        }
     }
 
     void setCallback(LifeCycleCallback callback) {
@@ -69,42 +58,18 @@ final class CellDirector {
         callback.onDetached(cell);
     }
 
-    void notifyPositionChanged(Cell cell) {
-        callback.onPositionChanged(cell);
+    void notifyPositionChanged(Cell cell, int fromX, int fromY) {
+        callback.onPositionChanged(cell, fromX, fromY);
     }
 
     void notifyVisibleChanged(Cell cell) {
         callback.onVisibleChanged(cell);
     }
 
-    boolean foreachAllCell(Cell root, CellFilter filter) {
-        boolean intercept = false;
-        if (root instanceof CellGroup) {
-            intercept = filter.call(root);
-            if (!intercept) {
-                CellGroup group = (CellGroup) root;
-                final int size = group.getSubCellCount();
-                for (int i = 0; i < size; i++) {
-                    intercept = foreachAllCell(group.getCellAt(i), filter);
-                    if (intercept) {
-                        break;
-                    }
-                }
-            }
-        } else if (null != root) {
-            intercept = filter.call(root);
-        }
-        return intercept;
-    }
-
-    public interface CellFilter {
-        boolean call(Cell cell);
-    }
-
     interface LifeCycleCallback {
         void onAttached(Cell cell);
 
-        void onPositionChanged(Cell cell);
+        void onPositionChanged(Cell cell, int fromX, int fromY);
 
         void onVisibleChanged(Cell cell);
 

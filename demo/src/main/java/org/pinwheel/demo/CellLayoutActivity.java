@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.view.celllayout.Cell;
 import org.pinwheel.agility2.view.celllayout.CellFactory;
+import org.pinwheel.agility2.view.celllayout.CellGroup;
 import org.pinwheel.agility2.view.celllayout.CellLayout;
 
 /**
@@ -34,7 +35,7 @@ public final class CellLayoutActivity extends Activity {
         setContentView(getTestLayout());
         try {
             String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));
-            cellLayout.setRoot(CellFactory.load(new JSONObject(jsonString)));
+            cellLayout.setRoot((CellGroup) CellFactory.load(new JSONObject(jsonString)));
         } catch (Exception e) {
             e.printStackTrace();
         }

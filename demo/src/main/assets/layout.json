@@ -4,7 +4,6 @@
     "type": "linear",
     "orientation": 1,
     "divider": 100,
-    "width": -1,
     "cells": [
       {
         "type": "cell",
