@@ -1,9 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.view.ViewGroup;
-
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +16,8 @@ public class CellGroup extends Cell {
 
     private final List<Cell> subCells = new ArrayList<>();
 
-    public CellGroup() {
+    CellGroup() {
         super();
-    }
-
-    CellGroup(JSONObject args) {
-        super(args);
     }
 
     public void addCell(Cell cell) {
@@ -33,7 +25,7 @@ public class CellGroup extends Cell {
     }
 
     protected CellGroup.Params getDefaultParams() {
-        return new Params(0, 0);
+        return new Params();
     }
 
     public void addCell(Cell cell, Params p) {
@@ -92,7 +84,7 @@ public class CellGroup extends Cell {
         return target;
     }
 
-    public final void foreachSubCells(Filter filter) {
+    public final void foreachSubCells(Filter<Cell> filter) {
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             if (filter.call(getCellAt(i))) {
@@ -101,11 +93,11 @@ public class CellGroup extends Cell {
         }
     }
 
-    public final void foreachAllCells(boolean withGroup, Filter filter) {
+    public final void foreachAllCells(boolean withGroup, Filter<Cell> filter) {
         _foreachAllCells(withGroup, this, filter);
     }
 
-    private boolean _foreachAllCells(boolean withGroup, CellGroup group, Filter filter) {
+    private boolean _foreachAllCells(boolean withGroup, CellGroup group, Filter<Cell> filter) {
         boolean intercept = withGroup && filter.call(group);
         if (intercept) {
             return true;
@@ -126,22 +118,18 @@ public class CellGroup extends Cell {
     }
 
     public static class Params {
-        int width, height;
-        int marginLeft, marginTop, marginRight, marginBottom;
+        @Attribute
+        public int width, height;
+        @Attribute
+        public int marginLeft, marginTop, marginRight, marginBottom;
+
+        Params() {
+            this(0, 0);
+        }
 
         public Params(int width, int height) {
             this.width = width;
             this.height = height;
-        }
-
-        Params(JSONObject args) {
-            this.width = args.optInt("width", ViewGroup.LayoutParams.MATCH_PARENT);
-            this.height = args.optInt("height", ViewGroup.LayoutParams.MATCH_PARENT);
-            final int margin = args.optInt("margin", 0);
-            this.marginLeft = args.optInt("marginLeft", margin);
-            this.marginTop = args.optInt("marginTop", margin);
-            this.marginRight = args.optInt("marginRight", margin);
-            this.marginBottom = args.optInt("marginBottom", margin);
         }
     }
 

@@ -153,11 +153,11 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
 
     @Override
     public void onAttached(Cell cell) {
+        Log.d(TAG, "onAttached: " + cell);
         if (cell instanceof CellGroup) {
             return;
         }
-        Log.d(TAG, "onAttached: " + cell);
-        View view = adapter.onCreateView(cell);
+        View view = adapter.getView(this, cell);
         addView(view);
         cellViewHolder.put(cell.getId(), view);
     }
@@ -187,9 +187,7 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
     }
 
     public interface Adapter {
-        View onCreateView(Cell cell);
-
-        void onUpdate(View view, Cell cell);
+        View getView(ViewGroup parent, Cell cell);
     }
 
 }

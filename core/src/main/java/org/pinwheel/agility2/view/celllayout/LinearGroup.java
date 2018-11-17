@@ -1,9 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.widget.LinearLayout;
-
-import org.json.JSONObject;
-
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -15,11 +11,17 @@ import org.json.JSONObject;
  */
 public class LinearGroup extends CellGroup implements Movable {
 
-    public static final int HORIZONTAL = LinearLayout.HORIZONTAL;
-    public static final int VERTICAL = LinearLayout.VERTICAL;
+    public static final int HORIZONTAL = 0;
+    public static final int VERTICAL = 1;
 
+    @Attribute
     private int divider;
+    @Attribute
     private int orientation;
+
+    LinearGroup() {
+        this(VERTICAL);
+    }
 
     public LinearGroup(int orientation) {
         super();
@@ -27,10 +29,9 @@ public class LinearGroup extends CellGroup implements Movable {
         this.divider = 0;
     }
 
-    LinearGroup(JSONObject args) {
-        super(args);
-        this.orientation = args.optInt("orientation", VERTICAL);
-        this.divider = args.optInt("divider", 0);
+    @Override
+    public CellGroup.Params getDefaultParams() {
+        return new LinearGroup.Params();
     }
 
     @Override
@@ -169,12 +170,12 @@ public class LinearGroup extends CellGroup implements Movable {
     }
 
     public static class Params extends CellGroup.Params {
-        public Params(int width, int height) {
-            super(width, height);
+        Params() {
+            this(0, 0);
         }
 
-        Params(JSONObject args) {
-            super(args);
+        public Params(int width, int height) {
+            super(width, height);
         }
     }
 

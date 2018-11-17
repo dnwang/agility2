@@ -21,7 +21,7 @@ final class CellDirector {
     void attach(Cell cell) {
         detachRoot();// detach old
         root = cell;
-        foreachAllCells(true, new Filter() {
+        foreachAllCells(true, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
                 cell.attach(CellDirector.this);
@@ -31,7 +31,7 @@ final class CellDirector {
     }
 
     private void detachRoot() {
-        foreachAllCells(true, new Filter() {
+        foreachAllCells(true, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
                 cell.removeFromOwner();
@@ -57,7 +57,7 @@ final class CellDirector {
 
     Cell findCellByPosition(final int x, final int y) {
         tmp = null;
-        foreachAllCells(false, new Filter() {
+        foreachAllCells(false, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
                 if (cell.getRect().contains(x, y)) {
@@ -70,7 +70,7 @@ final class CellDirector {
         return tmp;
     }
 
-    void foreachAllCells(boolean withGroup, Filter filter) {
+    void foreachAllCells(boolean withGroup, Filter<Cell> filter) {
         if (hasRoot()) {
             if (root instanceof CellGroup) {
                 ((CellGroup) root).foreachAllCells(withGroup, filter);

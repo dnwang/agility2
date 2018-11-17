@@ -13,35 +13,30 @@
         "column": 5,
         "cells": [
           {
-            "type": "cell",
             "x": 0,
             "y": 0,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 0,
             "y": 1,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 0,
             "y": 2,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 0,
             "y": 3,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 1,
             "y": 0,
             "marginLeft": 10,
@@ -58,37 +53,36 @@
         "height": 1600,
         "cells": [
           {
-            "type": "cell",
             "x": 0,
             "y": 0,
             "weightX": 3,
             "weightY": 2,
-            "layoutId": 3
+            "data": {
+              "layoutId": 3
+            }
           },
           {
-            "type": "cell",
             "x": 3,
             "y": 0,
             "weightX": 1,
             "weightY": 1,
-            "layoutId": 5
+            "data": {
+              "layoutId": 5
+            }
           },
           {
-            "type": "cell",
             "x": 4,
             "y": 0,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 3,
             "y": 1,
             "weightX": 1,
             "weightY": 1
           },
           {
-            "type": "cell",
             "x": 4,
             "y": 1,
             "weightX": 1,
@@ -105,28 +99,24 @@
             "column": 2,
             "cells": [
               {
-                "type": "cell",
                 "x": 0,
                 "y": 0,
                 "weightX": 1,
                 "weightY": 1
               },
               {
-                "type": "cell",
                 "x": 1,
                 "y": 0,
                 "weightX": 1,
                 "weightY": 1
               },
               {
-                "type": "cell",
                 "x": 0,
                 "y": 1,
                 "weightX": 1,
                 "weightY": 1
               },
               {
-                "type": "cell",
                 "x": 1,
                 "y": 1,
                 "weightX": 1,
@@ -144,7 +134,6 @@
             "orientation": 0,
             "cells": [
               {
-                "type": "cell",
                 "width": 300
               },
               {
@@ -155,28 +144,24 @@
                 "column": 2,
                 "cells": [
                   {
-                    "type": "cell",
                     "x": 0,
                     "y": 0,
                     "weightX": 1,
                     "weightY": 1
                   },
                   {
-                    "type": "cell",
                     "x": 1,
                     "y": 0,
                     "weightX": 1,
                     "weightY": 1
                   },
                   {
-                    "type": "cell",
                     "x": 0,
                     "y": 1,
                     "weightX": 1,
                     "weightY": 1
                   },
                   {
-                    "type": "cell",
                     "x": 1,
                     "y": 1,
                     "weightX": 1,
@@ -185,23 +170,18 @@
                 ]
               },
               {
-                "type": "cell",
                 "width": 300
               },
               {
-                "type": "cell",
                 "width": 500
               },
               {
-                "type": "cell",
                 "width": 300
               },
               {
-                "type": "cell",
                 "width": 400
               },
               {
-                "type": "cell",
                 "width": 400
               }
             ]
@@ -209,7 +189,6 @@
         ]
       },
       {
-        "type": "cell",
         "height": 600
       }
     ]

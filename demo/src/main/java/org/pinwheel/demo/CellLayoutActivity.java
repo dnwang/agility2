@@ -3,13 +3,14 @@ package org.pinwheel.demo;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.LongSparseArray;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.view.celllayout.Cell;
 import org.pinwheel.agility2.view.celllayout.CellFactory;
@@ -30,14 +31,17 @@ public final class CellLayoutActivity extends Activity {
 
     private CellLayout cellLayout;
 
+    private LongSparseArray<Bundle> cellDataMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         setContentView(getTestLayout());
         try {
-            String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));
-            cellLayout.setRoot(CellFactory.load(new JSONObject(jsonString)));
+            CellFactory.CellBundle bundle = CellFactory.load(IOUtils.stream2String(getResources().getAssets().open("layout.json")));
+            cellDataMap = bundle.dataMap;
+            cellLayout.setRoot(bundle.root);
         } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
@@ -48,23 +52,27 @@ public final class CellLayoutActivity extends Activity {
         cellLayout.setBackgroundColor(Color.BLACK);
         cellLayout.setAdapter(new CellLayout.Adapter() {
             @Override
-            public View onCreateView(final Cell cell) {
-                ImageView image = new ImageView(CellLayoutActivity.this);
-                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                image.setImageResource(R.mipmap.ic_launcher);
-                image.setBackgroundColor(Color.LTGRAY);
-                image.setOnClickListener(new View.OnClickListener() {
+            public View getView(ViewGroup parent, Cell cell) {
+                final long cellId = cell.getId();
+                final Bundle data = cellDataMap.get(cellId);
+                final int layoutId = (null == data) ? 0 : data.getInt("layoutId", 0);
+                View view;
+                if (layoutId > 0) {
+                    ImageView image = new ImageView(CellLayoutActivity.this);
+                    image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    image.setImageResource(R.mipmap.ic_launcher);
+                    view = image;
+                } else {
+                    view = new View(CellLayoutActivity.this);
+                }
+                view.setBackgroundColor(Color.LTGRAY);
+                view.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(v.getContext(), String.valueOf(cell.getId()), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(v.getContext(), "" + cellId, Toast.LENGTH_SHORT).show();
                     }
                 });
-                return image;
-            }
-
-            @Override
-            public void onUpdate(View view, Cell cell) {
-
+                return view;
             }
         });
         return cellLayout;

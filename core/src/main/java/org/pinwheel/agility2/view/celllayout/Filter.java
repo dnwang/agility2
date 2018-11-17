@@ -9,6 +9,6 @@ package org.pinwheel.agility2.view.celllayout;
  * @author dnwang
  * @version 2018/11/16,20:49
  */
-interface Filter {
-    boolean call(Cell cell);
+interface Filter<T> {
+    boolean call(T t);
 }

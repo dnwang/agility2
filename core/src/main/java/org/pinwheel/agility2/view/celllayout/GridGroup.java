@@ -1,7 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import org.json.JSONObject;
-
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -13,9 +11,14 @@ import org.json.JSONObject;
  */
 public class GridGroup extends CellGroup {
 
+    @Attribute
     private int divider;
+    @Attribute
+    private int row, column;
 
-    private final int row, column;
+    GridGroup() {
+        this(1, 1);
+    }
 
     public GridGroup(int row, int column) {
         super();
@@ -24,11 +27,9 @@ public class GridGroup extends CellGroup {
         this.divider = 0;
     }
 
-    GridGroup(JSONObject args) {
-        super(args);
-        this.row = args.optInt("row", 1);
-        this.column = args.optInt("column", 1);
-        this.divider = args.optInt("divider", 0);
+    @Override
+    public CellGroup.Params getDefaultParams() {
+        return new GridGroup.Params();
     }
 
     @Override
@@ -64,8 +65,14 @@ public class GridGroup extends CellGroup {
     }
 
     public static class Params extends CellGroup.Params {
-        int x, y;
-        int weightX, weightY;
+        @Attribute
+        public int x, y;
+        @Attribute
+        public int weightX, weightY;
+
+        Params() {
+            this(0, 0, 0, 0);
+        }
 
         public Params(int x, int y, int weightX, int weightY) {
             super(0, 0);
@@ -73,14 +80,6 @@ public class GridGroup extends CellGroup {
             this.y = y;
             this.weightX = weightX;
             this.weightY = weightY;
-        }
-
-        Params(JSONObject args) {
-            super(args);
-            this.x = args.optInt("x", 0);
-            this.y = args.optInt("y", 0);
-            this.weightX = args.optInt("weightX", 0);
-            this.weightY = args.optInt("weightY", 0);
         }
     }
 }

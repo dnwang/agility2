@@ -20,6 +20,7 @@ public class Cell {
     //
     private CellDirector director;
     //
+    @Attribute
     public int paddingLeft, paddingTop, paddingRight, paddingBottom;
     //
     private int x, y;
@@ -27,8 +28,8 @@ public class Cell {
     //
     private boolean stateVisible;
     //
-    private CellGroup.Params p;
     private CellGroup owner;
+    private CellGroup.Params p;
 
     public Cell() {
         this.id = ++ID_OFFSET;
@@ -43,12 +44,12 @@ public class Cell {
         paddingBottom = args.optInt("paddingBottom", padding);
     }
 
-    void attach(CellDirector director) {
+    final void attach(CellDirector director) {
         this.director = director;
         this.director.notifyAttached(this);
     }
 
-    void detach() {
+    final void detach() {
         owner = null;
         stateVisible = false;
         if (null != director) {
@@ -57,7 +58,7 @@ public class Cell {
         director = null;
     }
 
-    void removeFromOwner() {
+    final void removeFromOwner() {
         if (null != owner) {
             owner.removeCell(this);
         }
@@ -77,6 +78,38 @@ public class Cell {
         this.x = x;
         this.y = y;
         director.notifyPositionChanged(this, fromX, fromY);
+        // tak the root cell as a reference
+        Cell root = director.getRoot();
+        updateVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
+    }
+
+    protected final void setParams(CellGroup.Params p) {
+        this.p = p;
+    }
+
+    protected final void setOwner(CellGroup owner) {
+        this.owner = owner;
+    }
+
+    protected void updateVisible(int left, int top, int right, int bottom) {
+        final int l = getLeft(), t = getTop(), r = getRight(), b = getBottom();
+        if (right > left && bottom > top && r > l && b > t) {
+            if (r < left || b < top || l > right || t > bottom) {
+                setVisible(false);
+            } else {
+                setVisible(true);
+            }
+        } else {
+            setVisible(false);
+        }
+    }
+
+    private void setVisible(boolean is) {
+        if (stateVisible == is) {
+            return;
+        }
+        stateVisible = is;
+        director.notifyVisibleChanged(this);
     }
 
     public long getId() {
@@ -111,36 +144,20 @@ public class Cell {
         return height;
     }
 
-    protected void setParams(CellGroup.Params p) {
-        this.p = p;
-    }
-
-    public CellGroup.Params getParams() {
+    public final CellGroup.Params getParams() {
         return p;
     }
 
-    protected void setOwner(CellGroup owner) {
-        this.owner = owner;
-    }
-
-    public CellGroup getOwner() {
+    public final CellGroup getOwner() {
         return owner;
     }
 
-    public CellDirector getDirector() {
+    public final CellDirector getDirector() {
         return director;
     }
 
-    public boolean isVisible() {
+    public final boolean isVisible() {
         return stateVisible;
-    }
-
-    public void setVisible(boolean is) {
-        if (stateVisible == is) {
-            return;
-        }
-        stateVisible = is;
-        director.notifyVisibleChanged(this);
     }
 
     public Cell findCellById(long id) {
@@ -153,14 +170,15 @@ public class Cell {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         return id == ((Cell) o).id;
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Long.valueOf(id).hashCode();
     }
+
 }
