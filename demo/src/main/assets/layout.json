@@ -16,7 +16,10 @@
             "x": 0,
             "y": 0,
             "weightX": 1,
-            "weightY": 1
+            "weightY": 1,
+            "data": {
+              "title": "eee"
+            }
           },
           {
             "x": 0,
@@ -28,7 +31,10 @@
             "x": 0,
             "y": 2,
             "weightX": 1,
-            "weightY": 1
+            "weightY": 1,
+            "data": {
+              "title": "xxx"
+            }
           },
           {
             "x": 0,
@@ -41,7 +47,10 @@
             "y": 0,
             "marginLeft": 10,
             "weightX": 4,
-            "weightY": 4
+            "weightY": 4,
+            "data": {
+              "title": "iii"
+            }
           }
         ]
       },
@@ -58,6 +67,7 @@
             "weightX": 3,
             "weightY": 2,
             "data": {
+              "title": "qqq",
               "layoutId": 3
             }
           },
@@ -80,7 +90,10 @@
             "x": 3,
             "y": 1,
             "weightX": 1,
-            "weightY": 1
+            "weightY": 1,
+            "data": {
+              "title": "yyy"
+            }
           },
           {
             "x": 4,
@@ -102,7 +115,10 @@
                 "x": 0,
                 "y": 0,
                 "weightX": 1,
-                "weightY": 1
+                "weightY": 1,
+                "data": {
+                  "title": "ccc"
+                }
               },
               {
                 "x": 1,
@@ -114,7 +130,10 @@
                 "x": 0,
                 "y": 1,
                 "weightX": 1,
-                "weightY": 1
+                "weightY": 1,
+                "data": {
+                  "title": "ppp"
+                }
               },
               {
                 "x": 1,
@@ -147,13 +166,19 @@
                     "x": 0,
                     "y": 0,
                     "weightX": 1,
-                    "weightY": 1
+                    "weightY": 1,
+                    "data": {
+                      "title": "hhh"
+                    }
                   },
                   {
                     "x": 1,
                     "y": 0,
                     "weightX": 1,
-                    "weightY": 1
+                    "weightY": 1,
+                    "data": {
+                      "title": "rrr"
+                    }
                   },
                   {
                     "x": 0,
@@ -165,7 +190,10 @@
                     "x": 1,
                     "y": 1,
                     "weightX": 1,
-                    "weightY": 1
+                    "weightY": 1,
+                    "data": {
+                      "title": "mmm"
+                    }
                   }
                 ]
               },
@@ -173,13 +201,19 @@
                 "width": 300
               },
               {
-                "width": 500
+                "width": 500,
+                "data": {
+                  "title": "ooo"
+                }
               },
               {
                 "width": 300
               },
               {
-                "width": 400
+                "width": 400,
+                "data": {
+                  "title": "uuu"
+                }
               },
               {
                 "width": 400
@@ -189,7 +223,10 @@
         ]
       },
       {
-        "height": 600
+        "height": 600,
+        "data": {
+          "title": "lll"
+        }
       }
     ]
   }

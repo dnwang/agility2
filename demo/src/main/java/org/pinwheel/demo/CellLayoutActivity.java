@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.LongSparseArray;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -28,6 +30,7 @@ import java.io.IOException;
  * @version 2018/11/15,11:18
  */
 public final class CellLayoutActivity extends Activity {
+    private static final String TAG = "CellLayoutActivity";
 
     private CellLayout cellLayout;
 
@@ -47,35 +50,72 @@ public final class CellLayoutActivity extends Activity {
         }
     }
 
+    private int count = 0;
+
     private CellLayout getTestLayout() {
         cellLayout = new CellLayout(this);
         cellLayout.setBackgroundColor(Color.BLACK);
         cellLayout.setAdapter(new CellLayout.Adapter() {
             @Override
-            public View getView(ViewGroup parent, Cell cell) {
+            public View onCreate(ViewGroup parent, View view, Cell cell) {
                 final long cellId = cell.getId();
                 final Bundle data = cellDataMap.get(cellId);
-                final int layoutId = (null == data) ? 0 : data.getInt("layoutId", 0);
-                View view;
-                if (layoutId > 0) {
-                    ImageView image = new ImageView(CellLayoutActivity.this);
-                    image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    image.setImageResource(R.mipmap.ic_launcher);
-                    view = image;
-                } else {
-                    view = new View(CellLayoutActivity.this);
+                if (null == view) {
+                    view = createView(data);
                 }
-                view.setBackgroundColor(Color.LTGRAY);
+                updateView(view, data);
                 view.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Toast.makeText(v.getContext(), "" + cellId, Toast.LENGTH_SHORT).show();
                     }
                 });
+                count++;
                 return view;
+            }
+
+            @Override
+            public void onRecycled(View view, Cell cell) {
+                count--;
+            }
+
+            private View createView(Bundle data) {
+                final int style = getStyle(data);
+                if (style > 0) {
+                    ImageView image = new ImageView(CellLayoutActivity.this);
+                    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                    return image;
+                } else {
+                    TextView text = new TextView(CellLayoutActivity.this);
+                    text.setBackgroundColor(randomColor());
+                    text.setGravity(Gravity.CENTER);
+                    text.setTextColor(Color.BLACK);
+                    return text;
+                }
+            }
+
+            private void updateView(View view, Bundle data) {
+                final int style = getStyle(data);
+                if (style > 0) {
+                    ((ImageView) view).setImageResource(R.mipmap.ic_launcher);
+                } else {
+                    ((TextView) view).setText(null == data ? "" : data.getString("title", ""));
+                }
+            }
+
+            private int getStyle(Bundle data) {
+                return (null == data) ? 0 : data.getInt("layoutId", 0);
             }
         });
         return cellLayout;
+    }
+
+    private int randomColor() {
+        return Color.rgb(
+                (int) (Math.random() * 255),
+                (int) (Math.random() * 255),
+                (int) (Math.random() * 255)
+        );
     }
 
 }

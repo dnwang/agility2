@@ -10,6 +10,7 @@ import android.util.LongSparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 /**
  * Copyright (C), 2018 <br>
@@ -43,8 +44,6 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
         super(context, attrs, defStyleAttr, defStyleRes);
         this.init();
     }
-
-    private LongSparseArray<View> cellViewHolder = new LongSparseArray<>();
 
     private final CellDirector director = new CellDirector();
     private Adapter adapter;
@@ -153,13 +152,6 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
 
     @Override
     public void onAttached(Cell cell) {
-        Log.d(TAG, "onAttached: " + cell);
-        if (cell instanceof CellGroup) {
-            return;
-        }
-        View view = adapter.getView(this, cell);
-        addView(view);
-        cellViewHolder.put(cell.getId(), view);
     }
 
     @Override
@@ -173,21 +165,52 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
 
     @Override
     public void onVisibleChanged(Cell cell) {
-        Log.d(TAG, "onVisibleChanged: " + cell + ", is: " + cell.isVisible());
+        if (cell instanceof CellGroup) {
+            return;
+        }
+        if (cell.isVisible()) {
+            View cache = getCacheView(cell);
+            View view = adapter.onCreate(this, cache, cell);
+            if (view != cache) {
+                updateCacheView(cell, view);
+            }
+            if (this != view.getParent()) {
+                addView(view);
+            }
+        } else {
+            View cache = getCacheView(cell);
+            if (null != cache) {
+                if (this == cache.getParent()) {
+                    removeView(cache);
+                }
+                adapter.onRecycled(cache, cell);
+            }
+        }
     }
 
     @Override
     public void onDetached(Cell cell) {
-        if (cell instanceof CellGroup) {
-            return;
-        }
-        Log.d(TAG, "onDetached: " + cell);
-        cellViewHolder.remove(cell.getId());
-        // TODO: 2018/11/16
     }
 
+    private View getCacheView(Cell cell) {
+        return cellViewHolder.get(cell.getId());
+    }
+
+    private void updateCacheView(Cell cell, View view) {
+        View old = getCacheView(cell);
+        ViewParent parent = null == old ? null : old.getParent();
+        if (null != parent) {
+            ((ViewGroup) parent).removeView(old);
+        }
+        cellViewHolder.put(cell.getId(), view);
+    }
+
+    private LongSparseArray<View> cellViewHolder = new LongSparseArray<>();
+
     public interface Adapter {
-        View getView(ViewGroup parent, Cell cell);
+        View onCreate(ViewGroup parent, View cache, Cell cell);
+
+        void onRecycled(View view, Cell cell);
     }
 
 }

@@ -87,8 +87,8 @@ public class LinearGroup extends CellGroup implements Movable {
 
     @Override
     public void scrollBy(int dx, int dy) {
-        dx = VERTICAL == orientation ? 0 : dx;
-        dy = HORIZONTAL == orientation ? 0 : dy;
+        dx = (VERTICAL == orientation || contentWidth < getWidth()) ? 0 : dx;
+        dy = (HORIZONTAL == orientation || contentHeight < getHeight()) ? 0 : dy;
         if (0 == dx && 0 == dy) {
             return;
         }
