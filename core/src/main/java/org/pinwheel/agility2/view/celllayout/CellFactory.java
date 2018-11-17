@@ -1,6 +1,7 @@
 package org.pinwheel.agility2.view.celllayout;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -14,7 +15,7 @@ import org.json.JSONObject;
  */
 public final class CellFactory {
 
-    public static Cell load(JSONObject json) throws Exception {
+    public static Cell load(JSONObject json) throws JSONException {
         final int version = json.getInt("version");
         if (1 == version) {
             return new DefaultParser().parse(json);
@@ -25,11 +26,11 @@ public final class CellFactory {
 
     private static final class DefaultParser implements IParser {
         @Override
-        public Cell parse(JSONObject json) throws Exception {
+        public Cell parse(JSONObject json) throws JSONException {
             return parse(json.getJSONObject("root"), null);
         }
 
-        private Cell parse(JSONObject args, CellGroup owner) throws Exception {
+        private Cell parse(JSONObject args, CellGroup owner) throws JSONException {
             // params
             final CellGroup.Params p;
             if (owner instanceof GridGroup) {
@@ -57,7 +58,7 @@ public final class CellFactory {
                 }
             }
             if (null != owner) {
-                owner.addCellNoAttach(cell, p);
+                owner.addCell(cell, p);
             }
             return cell;
         }

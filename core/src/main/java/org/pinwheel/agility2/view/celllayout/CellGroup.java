@@ -28,35 +28,41 @@ public class CellGroup extends Cell {
         super(args);
     }
 
-    void addCellNoAttach(Cell cell, Params p) {
+    public void addCell(Cell cell) {
+        addCell(cell, getDefaultParams());
+    }
+
+    protected CellGroup.Params getDefaultParams() {
+        return new Params(0, 0);
+    }
+
+    public void addCell(Cell cell, Params p) {
         final long id = null == cell ? -1 : cell.getId();
         if (id <= 0) {
             throw new IllegalStateException("cell id error !");
         }
+        if (null == p) {
+            throw new IllegalStateException("cell must be have Params !");
+        }
         if (null != cell.getOwner()) {
             throw new IllegalStateException("already has owner !");
         }
-        subCells.add(cell);
         cell.setOwner(this);
         cell.setParams(p);
+        subCells.add(cell);
     }
 
-    public void addCell(Cell cell, Params p) {
-        addCellNoAttach(cell, p);
-        cell.attach(getDirector());
-    }
-
-    public Cell removeCell(Cell cell) {
+    public boolean removeCell(Cell cell) {
         if (null == cell) {
-            throw new IllegalStateException("can't find empty cell !");
+            return false;
         }
         final boolean has = subCells.contains(cell);
         if (!has) {
-            throw new IllegalStateException("group can't find special cell !");
+            return false;
         }
         subCells.remove(cell);
-        cell.detach();
-        return cell;
+        cell.setOwner(null);
+        return true;
     }
 
     public Cell getCellAt(int order) {
@@ -67,15 +73,16 @@ public class CellGroup extends Cell {
         return subCells.size();
     }
 
-    public final Cell findCellById(long id) {
-        Cell target = getId() == id ? this : null;
+    @Override
+    public Cell findCellById(long id) {
+        Cell target = super.findCellById(id);
         if (null == target) {
             for (Cell cell : subCells) {
                 if (cell.getId() == id) {
                     target = cell;
                     break;
                 } else if (cell instanceof CellGroup) {
-                    target = ((CellGroup) cell).findCellById(id);
+                    target = cell.findCellById(id);
                     if (null != target) {
                         break;
                     }

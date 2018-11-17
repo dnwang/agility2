@@ -11,43 +11,114 @@ package org.pinwheel.agility2.view.celllayout;
  */
 final class CellDirector {
 
-    private CellGroup root;
+    private Cell root;
     private LifeCycleCallback callback;
 
     boolean hasRoot() {
         return null != root;
     }
 
-    void attach(CellGroup group) {
-        if (null != root) {
-            // detach old
-            root.foreachAllCells(true, new Filter() {
-                @Override
-                public boolean call(Cell cell) {
-                    cell.removeFromOwner();
-                    return false;
-                }
-            });
-        }
-        root = group;
-        if (null != root) {
-            // attach new
-            root.foreachAllCells(true, new Filter() {
-                @Override
-                public boolean call(Cell cell) {
-                    cell.attach(CellDirector.this);
-                    return false;
-                }
-            });
-        }
+    void attach(Cell cell) {
+        detachRoot();// detach old
+        root = cell;
+        foreachAllCells(true, new Filter() {
+            @Override
+            public boolean call(Cell cell) {
+                cell.attach(CellDirector.this);
+                return false;
+            }
+        });
     }
 
-    CellGroup getRoot() {
+    private void detachRoot() {
+        foreachAllCells(true, new Filter() {
+            @Override
+            public boolean call(Cell cell) {
+                cell.removeFromOwner();
+                cell.detach();
+                return false;
+            }
+        });
+    }
+
+    Cell getRoot() {
         return root;
     }
 
     void setCallback(LifeCycleCallback callback) {
         this.callback = callback;
+    }
+
+    Cell findCellById(long id) {
+        return hasRoot() ? root.findCellById(id) : null;
+    }
+
+    private Cell tmp = null;
+
+    Cell findCellByPosition(final int x, final int y) {
+        tmp = null;
+        foreachAllCells(false, new Filter() {
+            @Override
+            public boolean call(Cell cell) {
+                if (cell.getRect().contains(x, y)) {
+                    tmp = cell;
+                    return true;
+                }
+                return false;
+            }
+        });
+        return tmp;
+    }
+
+    void foreachAllCells(boolean withGroup, Filter filter) {
+        if (hasRoot()) {
+            if (root instanceof CellGroup) {
+                ((CellGroup) root).foreachAllCells(withGroup, filter);
+            } else {
+                filter.call(root);
+            }
+        }
+    }
+
+    LinearGroup findLinearGroupBy(Cell cell, final int orientation) {
+        Cell owner = null != cell ? cell.getOwner() : null;
+        if (owner instanceof LinearGroup
+                && orientation == ((LinearGroup) owner).getOrientation()) {
+            return (LinearGroup) owner;
+        } else if (null != owner) {
+            return findLinearGroupBy(owner, orientation);
+        } else {
+            return null;
+        }
+    }
+
+    private Cell focusCell = null;
+
+    void setFocusCell(Cell cell) {
+        focusCell = cell;
+    }
+
+    Cell getFocusCell() {
+        return focusCell;
+    }
+
+    void move(Movable target, int dx, int dy) {
+        if (null == target || 0 == dx || 0 == dy) {
+            return;
+        }
+        target.scrollBy(dx, dy);
+    }
+
+    void measure(int width, int height) {
+        if (hasRoot()) {
+            root.setSize(width, height);
+        }
+    }
+
+    void layout(boolean changed, int l, int t, int r, int b) {
+        if (hasRoot()) {
+            root.setPosition(l, t);
+        }
     }
 
     void notifyAttached(Cell cell) {

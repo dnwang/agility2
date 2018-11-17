@@ -1,7 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.graphics.Rect;
-
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -19,6 +17,4 @@ interface Movable {
     int getScrollX();
 
     int getScrollY();
-
-    Rect getContentRect();
 }

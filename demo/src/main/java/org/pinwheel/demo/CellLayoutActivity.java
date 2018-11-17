@@ -8,12 +8,14 @@ import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.pinwheel.agility2.utils.IOUtils;
 import org.pinwheel.agility2.view.celllayout.Cell;
 import org.pinwheel.agility2.view.celllayout.CellFactory;
-import org.pinwheel.agility2.view.celllayout.CellGroup;
 import org.pinwheel.agility2.view.celllayout.CellLayout;
+
+import java.io.IOException;
 
 /**
  * Copyright (C), 2018 <br>
@@ -35,8 +37,8 @@ public final class CellLayoutActivity extends Activity {
         setContentView(getTestLayout());
         try {
             String jsonString = IOUtils.stream2String(getResources().getAssets().open("layout.json"));
-            cellLayout.setRoot((CellGroup) CellFactory.load(new JSONObject(jsonString)));
-        } catch (Exception e) {
+            cellLayout.setRoot(CellFactory.load(new JSONObject(jsonString)));
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
     }

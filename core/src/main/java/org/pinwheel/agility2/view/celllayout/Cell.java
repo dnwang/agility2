@@ -49,9 +49,10 @@ public class Cell {
 
     void detach() {
         owner = null;
-        p = null;
         stateVisible = false;
-        director.notifyDetached(this);
+        if (null != director) {
+            director.notifyDetached(this);
+        }
         director = null;
     }
 
@@ -139,6 +140,10 @@ public class Cell {
         }
         stateVisible = is;
         director.notifyVisibleChanged(this);
+    }
+
+    public Cell findCellById(long id) {
+        return getId() == id ? this : null;
     }
 
     @Override

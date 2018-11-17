@@ -1,6 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.graphics.Rect;
 import android.widget.LinearLayout;
 
 import org.json.JSONObject;
@@ -49,6 +48,7 @@ public class LinearGroup extends CellGroup implements Movable {
                 cell.setSize(w, p.height);
             }
         }
+        setContentSize();
     }
 
     @Override
@@ -91,6 +91,26 @@ public class LinearGroup extends CellGroup implements Movable {
         if (0 == dx && 0 == dy) {
             return;
         }
+        // fix dx
+        int tmp = scrollX + dx;
+        int max = -(contentWidth - getWidth());
+        if (tmp > 0) {
+            dx = -scrollX;
+        } else if (tmp < max) {
+            dx = max - scrollX;
+        }
+        // fix dy
+        tmp = scrollY + dy;
+        max = -(contentHeight - getHeight());
+        if (tmp > 0) {
+            dy = -scrollY;
+        } else if (tmp < max) {
+            dy = max - scrollY;
+        }
+        // move
+        if (0 == dx && 0 == dy) {
+            return;
+        }
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
@@ -120,25 +140,32 @@ public class LinearGroup extends CellGroup implements Movable {
         return scrollY;
     }
 
-    @Override
-    public Rect getContentRect() {
-        final Rect rect = new Rect();
+    public int getContentWidth() {
+        return contentWidth;
+    }
+
+    public int getContentHeight() {
+        return contentHeight;
+    }
+
+    private int contentWidth, contentHeight;
+
+    private void setContentSize() {
+        contentWidth = 0;
+        contentHeight = 0;
         final int size = getSubCellCount();
-        int widthSum = 0, heightSum = 0;
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
-            widthSum += cell.getWidth();
-            heightSum += cell.getHeight();
+            contentWidth += cell.getWidth();
+            contentHeight += cell.getHeight();
         }
         if (HORIZONTAL == orientation) {
-            widthSum += paddingLeft + paddingRight + Math.max(0, size - 1) * divider;
-            rect.set(getLeft(), getTop(), widthSum, getBottom());
+            contentWidth += paddingLeft + paddingRight + Math.max(0, size - 1) * divider;
+            contentHeight = getHeight();
         } else {
-            heightSum += paddingTop + paddingBottom + Math.max(0, size - 1) * divider;
-            rect.set(getLeft(), getTop(), getRight(), heightSum);
+            contentWidth = getWidth();
+            contentHeight += paddingTop + paddingBottom + Math.max(0, size - 1) * divider;
         }
-        rect.offset(getScrollX(), getScrollY());
-        return rect;
     }
 
     public static class Params extends CellGroup.Params {

@@ -20,7 +20,7 @@ import android.view.ViewGroup;
  * @author dnwang
  * @version 2018/11/15,11:21
  */
-public class CellLayout extends ViewGroup {
+public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallback {
     public static final String TAG = "CellLayout";
 
     public CellLayout(Context context) {
@@ -49,99 +49,62 @@ public class CellLayout extends ViewGroup {
     private final CellDirector director = new CellDirector();
     private Adapter adapter;
 
-    private final CellDirector.LifeCycleCallback lifecycle = new CellDirector.LifeCycleCallback() {
-        @Override
-        public void onAttached(Cell cell) {
-            if (cell instanceof CellGroup) {
-                return;
-            }
-            Log.d(TAG, "onAttached: " + cell);
-            View view = adapter.onCreateView(cell);
-            addView(view);
-            cellViewHolder.put(cell.getId(), view);
-        }
-
-        @Override
-        public void onPositionChanged(Cell cell, int fromX, int fromY) {
-            View view = cellViewHolder.get(cell.getId());
-            if (null != view) {
-                view.offsetLeftAndRight(cell.getLeft() - fromX);
-                view.offsetTopAndBottom(cell.getTop() - fromY);
-            }
-        }
-
-        @Override
-        public void onVisibleChanged(Cell cell) {
-            Log.d(TAG, "onVisibleChanged: " + cell + ", is: " + cell.isVisible());
-        }
-
-        @Override
-        public void onDetached(Cell cell) {
-            if (cell instanceof CellGroup) {
-                return;
-            }
-            Log.d(TAG, "onDetached: " + cell);
-            cellViewHolder.remove(cell.getId());
-            // TODO: 2018/11/16
-        }
-    };
-
     private void init() {
-        director.setCallback(lifecycle);
+        director.setCallback(this);
     }
 
     public void setAdapter(Adapter adapter) {
         this.adapter = adapter;
     }
 
-    public void setRoot(CellGroup root) {
+    public void setRoot(Cell root) {
         director.attach(root);
         requestLayout();
     }
 
+    public Cell findCellById(long id) {
+        return director.findCellById(id);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (!director.hasRoot()) {
-            return;
-        }
-        director.getRoot().setSize(getMeasuredWidth(), getMeasuredHeight());
+        director.measure(getMeasuredWidth(), getMeasuredHeight());
         // sync view
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
             View view = getChildAt(i);
             long cellId = cellViewHolder.keyAt(cellViewHolder.indexOfValue(view));
-            Cell cell = director.getRoot().findCellById(cellId);
-            view.measure(cell.getWidth(), cell.getHeight());
+            Cell cell = director.findCellById(cellId);
+            if (null != cell) {
+                view.measure(cell.getWidth(), cell.getHeight());
+            }
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        if (!director.hasRoot()) {
-            return;
-        }
-        director.getRoot().setPosition(l, t);
+        Log.e(TAG, "onLayout: " + changed);
+        director.layout(changed, l, t, r, b);
         // sync view
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
             View view = getChildAt(i);
             long cellId = cellViewHolder.keyAt(cellViewHolder.indexOfValue(view));
-            Cell cell = director.getRoot().findCellById(cellId);
-            view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
+            Cell cell = director.findCellById(cellId);
+            if (null != cell) {
+                view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
+            }
         }
     }
+
+    private final Point tmpPoint = new Point();
+    private Cell touchFocus = null;
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
         return true;
-    }
-
-    private Movable moveTarget = null;
-    private final Point tmpPoint = new Point();
-
-    public boolean isMoving() {
-        return null != moveTarget;
     }
 
     @Override
@@ -150,19 +113,22 @@ public class CellLayout extends ViewGroup {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 tmpPoint.set((int) event.getX(), (int) event.getY());
-                findLinearGroupBy(tmpPoint.x, tmpPoint.y);
+                if (null == touchFocus) {
+                    touchFocus = director.findCellByPosition(tmpPoint.x, tmpPoint.y);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (isMoving()) {
+                if (null != touchFocus) {
                     int dx = (int) event.getX() - tmpPoint.x;
                     int dy = (int) event.getY() - tmpPoint.y;
-                    moveCell(moveTarget, dx, dy);
+                    int dir = Math.abs(dx) > Math.abs(dy) ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
+                    director.move(director.findLinearGroupBy(touchFocus, dir), dx, dy);
                     tmpPoint.set((int) event.getX(), (int) event.getY());
                 }
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                moveTarget = null;
+                touchFocus = null;
                 break;
             default:
                 return superState;
@@ -170,42 +136,39 @@ public class CellLayout extends ViewGroup {
         return true;
     }
 
-    protected final void moveCell(Movable target, int dx, int dy) {
-        if (0 != dx) {
-            if (dx > -target.getScrollX()) {
-                dx = -target.getScrollX();
-            }
+    @Override
+    public void onAttached(Cell cell) {
+        if (cell instanceof CellGroup) {
+            return;
         }
-        if (0 != dy) {
-            if (dy > -target.getScrollY()) {
-                dy = -target.getScrollY();
-            }
-        }
-        target.scrollBy(dx, dy);
+        Log.d(TAG, "onAttached: " + cell);
+        View view = adapter.onCreateView(cell);
+        addView(view);
+        cellViewHolder.put(cell.getId(), view);
     }
 
-    private void findLinearGroupBy(final int x, final int y) {
-        director.getRoot().foreachAllCells(false, new Filter() {
-            @Override
-            public boolean call(Cell cell) {
-                if (cell.getRect().contains(x, y)) {
-                    moveTarget = findLinearGroupBy(cell);
-                    return true;
-                }
-                return false;
-            }
-        });
+    @Override
+    public void onPositionChanged(Cell cell, int fromX, int fromY) {
+        View view = cellViewHolder.get(cell.getId());
+        if (null != view) {
+            view.offsetLeftAndRight(cell.getLeft() - fromX);
+            view.offsetTopAndBottom(cell.getTop() - fromY);
+        }
     }
 
-    private Movable findLinearGroupBy(Cell cell) {
-        Cell owner = null != cell ? cell.getOwner() : null;
-        if (owner instanceof Movable) {
-            return (Movable) owner;
-        } else if (null != owner) {
-            return findLinearGroupBy(owner);
-        } else {
-            return null;
+    @Override
+    public void onVisibleChanged(Cell cell) {
+        Log.d(TAG, "onVisibleChanged: " + cell + ", is: " + cell.isVisible());
+    }
+
+    @Override
+    public void onDetached(Cell cell) {
+        if (cell instanceof CellGroup) {
+            return;
         }
+        Log.d(TAG, "onDetached: " + cell);
+        cellViewHolder.remove(cell.getId());
+        // TODO: 2018/11/16
     }
 
     public interface Adapter {
