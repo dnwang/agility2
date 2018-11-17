@@ -36,10 +36,11 @@ public class Cell {
 
     Cell(JSONObject args) {
         this();
-        paddingLeft = args.optInt("paddingLeft", 0);
-        paddingTop = args.optInt("paddingTop", 0);
-        paddingRight = args.optInt("paddingRight", 0);
-        paddingBottom = args.optInt("paddingBottom", 0);
+        final int padding = args.optInt("padding", 0);
+        paddingLeft = args.optInt("paddingLeft", padding);
+        paddingTop = args.optInt("paddingTop", padding);
+        paddingRight = args.optInt("paddingRight", padding);
+        paddingBottom = args.optInt("paddingBottom", padding);
     }
 
     void attach(CellDirector director) {

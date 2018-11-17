@@ -3,10 +3,10 @@ package org.pinwheel.demo;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
-import android.widget.TextView;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,19 +45,21 @@ public final class CellLayoutActivity extends Activity {
 
     private CellLayout getTestLayout() {
         cellLayout = new CellLayout(this);
-        cellLayout.setBackgroundColor(Color.LTGRAY);
+        cellLayout.setBackgroundColor(Color.BLACK);
         cellLayout.setAdapter(new CellLayout.Adapter() {
             @Override
-            public View onCreateView(Cell cell) {
-                TextView text = new TextView(CellLayoutActivity.this);
-                text.setText(String.valueOf(cell.getId()));
-                text.setGravity(Gravity.CENTER);
-                text.setBackgroundColor(Color.rgb(
-                        (int) (Math.random() * 255),
-                        (int) (Math.random() * 255),
-                        (int) (Math.random() * 255)
-                ));
-                return text;
+            public View onCreateView(final Cell cell) {
+                ImageView image = new ImageView(CellLayoutActivity.this);
+                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                image.setImageResource(R.mipmap.ic_launcher);
+                image.setBackgroundColor(Color.LTGRAY);
+                image.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(v.getContext(), String.valueOf(cell.getId()), Toast.LENGTH_SHORT).show();
+                    }
+                });
+                return image;
             }
 
             @Override

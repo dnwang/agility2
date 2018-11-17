@@ -99,41 +99,56 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
         }
     }
 
+    private static int MOVE_SLOP = 10;
     private final Point tmpPoint = new Point();
-    private Cell touchFocus = null;
+    private Cell touchCell = null;
+    private boolean isMoving = false;
 
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent event) {
-        return true;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        boolean superState = super.onTouchEvent(event);
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        final boolean superState = super.dispatchTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                getParent().requestDisallowInterceptTouchEvent(true);
                 tmpPoint.set((int) event.getX(), (int) event.getY());
-                if (null == touchFocus) {
-                    touchFocus = director.findCellByPosition(tmpPoint.x, tmpPoint.y);
+                if (null == touchCell) {
+                    touchCell = director.findCellByPosition(tmpPoint.x, tmpPoint.y);
                 }
-                break;
+                return true;// can not return superState.
             case MotionEvent.ACTION_MOVE:
-                if (null != touchFocus) {
-                    int dx = (int) event.getX() - tmpPoint.x;
-                    int dy = (int) event.getY() - tmpPoint.y;
-                    int dir = Math.abs(dx) > Math.abs(dy) ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
-                    director.move(director.findLinearGroupBy(touchFocus, dir), dx, dy);
+                int dx = (int) event.getX() - tmpPoint.x;
+                int dy = (int) event.getY() - tmpPoint.y;
+                int absDx = Math.abs(dx);
+                int absDy = Math.abs(dy);
+                if (isMoving || absDx > MOVE_SLOP || absDy > MOVE_SLOP) {
+                    isMoving = true;
+                    int dir = absDx > absDy ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
+                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy);
                     tmpPoint.set((int) event.getX(), (int) event.getY());
+                } else {
+                    getParent().requestDisallowInterceptTouchEvent(false);
                 }
-                break;
+                return superState;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                touchFocus = null;
-                break;
+                touchCell = null;
+                isMoving = false;
+                getParent().requestDisallowInterceptTouchEvent(false);
+                return superState;
             default:
                 return superState;
         }
-        return true;
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        boolean superState = super.onInterceptTouchEvent(event);
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_MOVE:
+                return isMoving;
+            default:
+                return superState;
+        }
     }
 
     @Override

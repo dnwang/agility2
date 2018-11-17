@@ -137,10 +137,11 @@ public class CellGroup extends Cell {
         Params(JSONObject args) {
             this.width = args.optInt("width", ViewGroup.LayoutParams.MATCH_PARENT);
             this.height = args.optInt("height", ViewGroup.LayoutParams.MATCH_PARENT);
-            this.marginLeft = args.optInt("marginLeft", 0);
-            this.marginTop = args.optInt("marginTop", 0);
-            this.marginRight = args.optInt("marginRight", 0);
-            this.marginBottom = args.optInt("marginBottom", 0);
+            final int margin = args.optInt("margin", 0);
+            this.marginLeft = args.optInt("marginLeft", margin);
+            this.marginTop = args.optInt("marginTop", margin);
+            this.marginRight = args.optInt("marginRight", margin);
+            this.marginBottom = args.optInt("marginBottom", margin);
         }
     }
 
