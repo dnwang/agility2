@@ -128,7 +128,7 @@ public class LinearGroup extends CellGroup implements Movable {
         }
         final int dx = x - (getLeft() + getScrollX());
         final int dy = y - (getTop() + getScrollY());
-        scrollBy(dx, dy);
+        scrollBy(-dx, -dy);
     }
 
     @Override
