@@ -9,7 +9,7 @@ package org.pinwheel.agility2.view.celllayout;
  * @author dnwang
  * @version 2018/11/15,11:32
  */
-public class LinearGroup extends CellGroup implements Movable {
+public class LinearGroup extends CellGroup {
 
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
@@ -35,47 +35,45 @@ public class LinearGroup extends CellGroup implements Movable {
     }
 
     @Override
-    protected void setSize(int width, int height) {
-        super.setSize(width, height);
-        final int size = getSubCellCount();
+    protected void measure(int width, int height) {
+        super.measure(width, height);
+        final int size = getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (LinearGroup.Params) cell.getParams();
             if (HORIZONTAL == orientation) {
                 int h = height - paddingTop - paddingBottom - p.marginTop - p.marginBottom;
-                cell.setSize(p.width, h);
+                cell.measure(p.width, h);
             } else {
                 int w = width - paddingLeft - paddingRight - p.marginLeft - p.marginRight;
-                cell.setSize(w, p.height);
+                cell.measure(w, p.height);
             }
         }
         setContentSize();
     }
 
     @Override
-    protected void setPosition(int x, int y) {
-        super.setPosition(x, y);
+    protected void layout(int x, int y) {
+        super.layout(x, y);
         int tmp;
         if (HORIZONTAL == orientation) {
             tmp = getLeft() + paddingLeft;
-//            tmp = getLeft() + getScrollX() + paddingLeft;
         } else {
             tmp = getTop() + paddingTop;
-//            tmp = getTop() + getScrollY() + paddingTop;
         }
-        final int size = getSubCellCount();
+        final int size = getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (LinearGroup.Params) cell.getParams();
             if (HORIZONTAL == orientation) {
                 tmp += 0 == i ? 0 : divider;
                 tmp += p.marginLeft;
-                cell.setPosition(tmp, getTop() + paddingTop + p.marginTop);
+                cell.layout(tmp, getTop() + paddingTop + p.marginTop);
                 tmp += (cell.getWidth() + p.marginRight);
             } else {
                 tmp += 0 == i ? 0 : divider;
                 tmp += p.marginTop;
-                cell.setPosition(getLeft() + paddingLeft + p.marginLeft, tmp);
+                cell.layout(getLeft() + paddingLeft + p.marginLeft, tmp);
                 tmp += (cell.getHeight() + p.marginBottom);
             }
         }
@@ -85,42 +83,18 @@ public class LinearGroup extends CellGroup implements Movable {
         return orientation;
     }
 
-    private int scrollX, scrollY;
-
     @Override
     public void scrollBy(int dx, int dy) {
-        scrollTo(getScrollX() + dx, getScrollY() + dy);
+        dy = HORIZONTAL == orientation ? 0 : dy;
+        dx = HORIZONTAL != orientation ? 0 : dx;
+        super.scrollBy(dx, dy);
     }
 
     @Override
-    public void scrollTo(int newX, int newY) {
-        final int x = getLeft();
-        final int y = getTop();
-        if (HORIZONTAL == orientation && x != newX) {
-            scrollX = newX - x;
-            final int size = getSubCellCount();
-            for (int i = 0; i < size; i++) {
-                Cell cell = getCellAt(i);
-                cell.offset(newX, cell.getTop());
-            }
-        } else if (VERTICAL == orientation && y != newY) {
-            scrollY = newY - y;
-            final int size = getSubCellCount();
-            for (int i = 0; i < size; i++) {
-                Cell cell = getCellAt(i);
-                cell.offset(cell.getLeft(), newY);
-            }
-        }
-    }
-
-    @Override
-    public int getScrollX() {
-        return scrollX;
-    }
-
-    @Override
-    public int getScrollY() {
-        return scrollY;
+    public void scrollTo(int x, int y) {
+        y = HORIZONTAL == orientation ? getTop() : y;
+        x = HORIZONTAL != orientation ? getLeft() : x;
+        super.scrollTo(x, y);
     }
 
     public int getContentWidth() {
@@ -136,7 +110,7 @@ public class LinearGroup extends CellGroup implements Movable {
     private void setContentSize() {
         contentWidth = 0;
         contentHeight = 0;
-        final int size = getSubCellCount();
+        final int size = getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             contentWidth += cell.getWidth();

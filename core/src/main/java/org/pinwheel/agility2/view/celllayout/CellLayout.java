@@ -30,10 +30,6 @@ import java.util.Set;
 public class CellLayout extends ViewGroup {
     private static final String TAG = "CellLayout";
 
-    private static final int TRANSITION_ADD = 0;
-    private static final int TRANSITION_REMOVE = 1;
-    private static final int TRANSITION_UPDATE = 2;
-
     public CellLayout(Context context) {
         super(context);
         this.init();
@@ -90,7 +86,13 @@ public class CellLayout extends ViewGroup {
 
     public void setRootCell(Cell root) {
         director.attach(root);
-        requestLayout();
+        // after layout
+        post(new Runnable() {
+            @Override
+            public void run() {
+                director.refresh();
+            }
+        });
     }
 
     public Cell findCellById(long id) {
@@ -100,7 +102,6 @@ public class CellLayout extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        Log.e(TAG, "onMeasure");
         // don't support wrap_content
         director.measure(getMeasuredWidth(), getMeasuredHeight());
         // sync view
@@ -109,7 +110,10 @@ public class CellLayout extends ViewGroup {
             View view = getChildAt(i);
             Cell cell = manager.findCellByView(view);
             if (null != cell) {
-                view.measure(cell.getWidth(), cell.getHeight());
+                view.measure(
+                        MeasureSpec.makeMeasureSpec(cell.getWidth(), MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(cell.getHeight(), MeasureSpec.EXACTLY)
+                );
             }
         }
     }
@@ -161,7 +165,6 @@ public class CellLayout extends ViewGroup {
                 return superState;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-//                director.moveToCenter(touchCell);
                 touchCell = null;
                 isMoving = false;
                 getParent().requestDisallowInterceptTouchEvent(false);
@@ -190,27 +193,26 @@ public class CellLayout extends ViewGroup {
     public interface ViewAdapter {
         int getViewPoolId(@NonNull Cell cell);
 
-        @NonNull
         View onCreateView(@NonNull Cell cell);
 
         void onBindView(@NonNull View view, @NonNull Cell cell);
+
+        void onViewRecycled(@NonNull View view, @NonNull Cell cell);
     }
 
     private final class ViewManager implements CellDirector.LifeCycleCallback {
         private ViewAdapter adapter;
-
-        private final SparseArray<ViewPool> cellPoolMap = new SparseArray<>();
-
-        private final Map<Cell, View> cellViews = new HashMap<>();
+        private final SparseArray<ViewPool> cellPool = new SparseArray<>();
+        private final Map<Cell, View> cellViewMap = new HashMap<>();
 
         void setAdapter(ViewAdapter adapter) {
             this.adapter = adapter;
         }
 
-        View findViewByCellId(long cellId) {
-            Set<Map.Entry<Cell, View>> entrySet = cellViews.entrySet();
+        View findViewByCell(Cell cell) {
+            Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
             for (Map.Entry<Cell, View> entry : entrySet) {
-                if (entry.getKey().getId() == cellId) {
+                if (entry.getKey().equals(cell)) {
                     return entry.getValue();
                 }
             }
@@ -218,7 +220,7 @@ public class CellLayout extends ViewGroup {
         }
 
         Cell findCellByView(View view) {
-            Set<Map.Entry<Cell, View>> entrySet = cellViews.entrySet();
+            Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
             for (Map.Entry<Cell, View> entry : entrySet) {
                 if (entry.getValue() == view) {
                     return entry.getKey();
@@ -234,7 +236,7 @@ public class CellLayout extends ViewGroup {
 
         @Override
         public void onPositionChanged(Cell cell, int fromX, int fromY) {
-            final View view = findViewByCellId(cell.getId());
+            final View view = findViewByCell(cell);
             if (null != view) {
                 view.offsetLeftAndRight(cell.getLeft() - fromX);
                 view.offsetTopAndBottom(cell.getTop() - fromY);
@@ -244,50 +246,100 @@ public class CellLayout extends ViewGroup {
         @Override
         public void onVisibleChanged(Cell cell) {
             if (cell instanceof CellGroup) {
+                // don't care group
                 return;
             }
             Log.d(TAG, "onVisibleChanged: " + cell + ", is: " + cell.isVisible());
-            final int poolId = adapter.getViewPoolId(cell);
-            ViewPool pool = cellPoolMap.get(poolId);
-            if (null == pool) {
-                pool = new ViewPool();
-                cellPoolMap.put(poolId, pool);
-            }
+            final ViewPool pool = getPool(adapter.getViewPoolId(cell));
             if (cell.isVisible()) {
                 // add
-                View view = pool.obtain();
+                View view = pool.acquire();
                 if (null == view) {
                     view = adapter.onCreateView(cell);
-                    pool.add(view);
+                    if (null == view) {
+                        throw new IllegalStateException("'Adapter.onCreateView()' can't got null view !");
+                    }
                 }
                 adapter.onBindView(view, cell);
                 if (CellLayout.this != view.getParent()) {
                     CellLayout.this.addView(view);
                 }
-                cellViews.put(cell, view);
+                cellViewMap.put(cell, view);
             } else {
                 // remove
-                View view = findViewByCellId(cell.getId());
-                if (null != view) {
-                    CellLayout.this.removeView(view);
-                }
+                recycleView(cell, pool);
             }
         }
 
         @Override
         public void onDetached(Cell cell) {
             Log.d(TAG, "onDetached: " + cell);
+            recycleView(cell, getPool(adapter.getViewPoolId(cell)));
         }
 
+        private ViewPool getPool(int poolId) {
+            ViewPool pool = cellPool.get(poolId);
+            if (null == pool) {
+                pool = new ViewPool(5);
+                cellPool.put(poolId, pool);
+            }
+            return pool;
+        }
+
+        private void recycleView(Cell cell, ViewPool pool) {
+            final View view = findViewByCell(cell);
+            if (null != view) {
+                CellLayout.this.removeView(view);
+                cellViewMap.remove(cell);
+                adapter.onViewRecycled(view, cell);
+                if (null != pool) {
+                    pool.release(view);
+                }
+            }
+        }
     }
 
     private static final class ViewPool {
-        View obtain() {
+        private final View[] caches;
+        private int maxSize;
+
+        ViewPool(int maxPoolSize) {
+            if (maxPoolSize <= 0) {
+                throw new IllegalArgumentException("The max pool size must be > 0");
+            }
+            caches = new View[maxPoolSize];
+        }
+
+        View acquire() {
+            if (maxSize > 0) {
+                final int lastPooledIndex = maxSize - 1;
+                View instance = caches[lastPooledIndex];
+                caches[lastPooledIndex] = null;
+                maxSize--;
+                return instance;
+            }
             return null;
         }
 
-        void add(View view) {
+        boolean release(View instance) {
+            if (isInPool(instance)) {
+                throw new IllegalStateException("Already in the pool!");
+            }
+            if (maxSize < caches.length) {
+                caches[maxSize] = instance;
+                maxSize++;
+                return true;
+            }
+            return false;
+        }
 
+        private boolean isInPool(View instance) {
+            for (int i = 0; i < maxSize; i++) {
+                if (caches[i] == instance) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

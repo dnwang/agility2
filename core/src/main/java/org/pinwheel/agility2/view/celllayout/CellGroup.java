@@ -12,7 +12,7 @@ import java.util.List;
  * @author dnwang
  * @version 2018/11/15,14:01
  */
-public class CellGroup extends Cell {
+public class CellGroup extends Cell implements Movable {
 
     private final List<Cell> subCells = new ArrayList<>();
 
@@ -36,10 +36,10 @@ public class CellGroup extends Cell {
         if (null == p) {
             throw new IllegalStateException("cell must be have Params !");
         }
-        if (null != cell.getOwner()) {
-            throw new IllegalStateException("already has owner !");
+        if (null != cell.getParent()) {
+            throw new IllegalStateException("already has parent !");
         }
-        cell.setOwner(this);
+        cell.setParent(this);
         cell.setParams(p);
         subCells.add(cell);
     }
@@ -53,25 +53,63 @@ public class CellGroup extends Cell {
             return false;
         }
         subCells.remove(cell);
-        cell.setOwner(null);
+        cell.setParent(null);
         return true;
-    }
-
-    @Override
-    public void offset(int dx, int dy) {
-        super.offset(dx, dy);
-        final int size = getSubCellCount();
-        for (int i = 0; i < size; i++) {
-            getCellAt(i).offset(dx, dy);
-        }
     }
 
     public Cell getCellAt(int order) {
         return subCells.get(order);
     }
 
-    public int getSubCellCount() {
+    public int getCellCount() {
         return subCells.size();
+    }
+
+    private int scrollX, scrollY;
+
+    @Override
+    public void scrollBy(final int dx, final int dy) {
+        if (0 == dx && 0 == dy) {
+            return;
+        }
+        final int size = getCellCount();
+        for (int i = 0; i < size; i++) {
+            Cell cell = getCellAt(i);
+            if (cell instanceof CellGroup) {
+                ((CellGroup) cell).foreachAllCells(true, new Filter<Cell>() {
+                    @Override
+                    public boolean call(Cell cell) {
+                        cell.offset(dx, dy);
+                        cell.updateVisibleSate();
+                        return false;
+                    }
+                });
+            } else {
+                cell.offset(dx, dy);
+                cell.updateVisibleSate();
+            }
+        }
+        scrollX += dx;
+        scrollY += dy;
+    }
+
+    @Override
+    public void scrollTo(int x, int y) {
+        int left = getLeft(), top = getTop();
+        if (left == x && top == y) {
+            return;
+        }
+        scrollBy(x - left, y - top);
+    }
+
+    @Override
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    @Override
+    public int getScrollY() {
+        return scrollY;
     }
 
     @Override
@@ -93,15 +131,6 @@ public class CellGroup extends Cell {
         return target;
     }
 
-    public final void foreachSubCells(Filter<Cell> filter) {
-        final int size = getSubCellCount();
-        for (int i = 0; i < size; i++) {
-            if (filter.call(getCellAt(i))) {
-                break;
-            }
-        }
-    }
-
     public final void foreachAllCells(boolean withGroup, Filter<Cell> filter) {
         _foreachAllCells(withGroup, this, filter);
     }
@@ -111,7 +140,7 @@ public class CellGroup extends Cell {
         if (intercept) {
             return true;
         }
-        final int size = group.getSubCellCount();
+        final int size = group.getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = group.getCellAt(i);
             if (cell instanceof CellGroup) {

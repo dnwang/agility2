@@ -1,9 +1,5 @@
 package org.pinwheel.agility2.view.celllayout;
 
-import android.graphics.Rect;
-
-import org.json.JSONObject;
-
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -26,22 +22,13 @@ public class Cell {
     private int x, y;
     private int width, height;
     //
-    private boolean stateVisible;
+    private boolean isVisible;
     //
-    private CellGroup owner;
+    private CellGroup parent;
     private CellGroup.Params p;
 
     public Cell() {
         this.id = ++ID_OFFSET;
-    }
-
-    Cell(JSONObject args) {
-        this();
-        final int padding = args.optInt("padding", 0);
-        paddingLeft = args.optInt("paddingLeft", padding);
-        paddingTop = args.optInt("paddingTop", padding);
-        paddingRight = args.optInt("paddingRight", padding);
-        paddingBottom = args.optInt("paddingBottom", padding);
     }
 
     final void attach(CellDirector director) {
@@ -50,81 +37,57 @@ public class Cell {
     }
 
     final void detach() {
-        owner = null;
-        stateVisible = false;
+        parent = null;
+        isVisible = false;
         if (null != director) {
             director.notifyDetached(this);
         }
         director = null;
     }
 
-    final void removeFromOwner() {
-        if (null != owner) {
-            owner.removeCell(this);
+    final void removeFromParent() {
+        if (null != parent) {
+            parent.removeCell(this);
         }
     }
 
-    protected void setSize(int width, int height) {
+    protected void measure(int width, int height) {
         this.width = width;
         this.height = height;
     }
 
-    protected void setPosition(int x, int y) {
-        if (this.x == x && this.y == y) {
-            return;
-        }
-        updatePosition(x, y);
+    protected void layout(int x, int y) {
+        setPosition(x, y);
     }
 
     protected final void setParams(CellGroup.Params p) {
         this.p = p;
     }
 
-    protected final void setOwner(CellGroup owner) {
-        this.owner = owner;
+    protected final void setParent(CellGroup parent) {
+        this.parent = parent;
     }
 
-    protected void updateVisible(int left, int top, int right, int bottom) {
+    private void setVisible(int left, int top, int right, int bottom) {
         final int l = getLeft(), t = getTop(), r = getRight(), b = getBottom();
         if (right > left && bottom > top && r > l && b > t) {
             if (r < left || b < top || l > right || t > bottom) {
-                setVisible(false);
+                isVisible = false;
             } else {
-                setVisible(true);
+                isVisible = true;
             }
         } else {
-            setVisible(false);
+            isVisible = false;
         }
     }
 
-    private void updatePosition(int x, int y) {
-        int fromX = this.x;
-        int fromY = this.y;
+    private void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
-        director.notifyPositionChanged(this, fromX, fromY);
-        // tak the root cell as a reference
-        Cell root = director.getRoot();
-        updateVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
-    }
-
-    private void setVisible(boolean is) {
-        if (stateVisible == is) {
-            return;
-        }
-        stateVisible = is;
-        director.notifyVisibleChanged(this);
     }
 
     public long getId() {
         return id;
-    }
-
-    public void offset(int dx, int dy) {
-        if (0 == dx && 0 == dy) {
-            return;
-        }
-        updatePosition(getLeft() + dx, getTop() + dy);
     }
 
     public int getLeft() {
@@ -143,8 +106,8 @@ public class Cell {
         return getTop() + getHeight();
     }
 
-    public Rect getRect() {
-        return new Rect(getLeft(), getTop(), getRight(), getBottom());
+    public boolean contains(int x, int y) {
+        return x >= getLeft() && x < getRight() && y >= getTop() && y < getBottom();
     }
 
     public int getWidth() {
@@ -155,12 +118,31 @@ public class Cell {
         return height;
     }
 
+    public final void offset(final int dx, final int dy) {
+        if (0 == dx && 0 == dy) {
+            return;
+        }
+        final int oldX = getLeft();
+        final int oldY = getTop();
+        setPosition(oldX + dx, oldY + dy);
+        director.notifyPositionChanged(this, oldX, oldY);
+    }
+
+    public final void updateVisibleSate() {
+        final boolean oldState = isVisible();
+        Cell root = director.getRoot();
+        setVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
+        if (oldState != isVisible()) {
+            director.notifyVisibleChanged(this);
+        }
+    }
+
     public final CellGroup.Params getParams() {
         return p;
     }
 
-    public final CellGroup getOwner() {
-        return owner;
+    public final CellGroup getParent() {
+        return parent;
     }
 
     public final CellDirector getDirector() {
@@ -168,7 +150,7 @@ public class Cell {
     }
 
     public final boolean isVisible() {
-        return stateVisible;
+        return isVisible;
     }
 
     public Cell findCellById(long id) {

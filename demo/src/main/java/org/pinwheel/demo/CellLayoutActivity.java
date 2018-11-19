@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.view.Gravity;
 import android.view.View;
@@ -62,8 +63,8 @@ public final class CellLayoutActivity extends Activity {
             }
 
             @Override
-            public @NonNull
-            View onCreateView(@NonNull Cell cell) {
+            public View onCreateView(@NonNull Cell cell) {
+                Log.e("CellLayoutActivity", "onCreateView: " + cell);
                 if (getViewPoolId(cell) > 0) {
                     ImageButton image = new ImageButton(CellLayoutActivity.this);
                     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -78,6 +79,7 @@ public final class CellLayoutActivity extends Activity {
 
             @Override
             public void onBindView(@NonNull View view, @NonNull Cell cell) {
+                Log.e("CellLayoutActivity", "onBindView: " + cell);
                 final long cellId = cell.getId();
                 if (getViewPoolId(cell) > 0) {
                     ImageView image = (ImageView) view;
@@ -92,6 +94,12 @@ public final class CellLayoutActivity extends Activity {
                         Toast.makeText(v.getContext(), "" + cellId, Toast.LENGTH_SHORT).show();
                     }
                 });
+            }
+
+            @Override
+            public void onViewRecycled(@NonNull View view, @NonNull Cell cell) {
+                Log.e("CellLayoutActivity", "onViewRecycled: " + cell);
+                view.setBackgroundColor(getColor());
             }
         });
         return cellLayout;

@@ -34,7 +34,7 @@ final class CellDirector {
         foreachAllCells(true, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
-                cell.removeFromOwner();
+                cell.removeFromParent();
                 cell.detach();
                 return false;
             }
@@ -60,7 +60,7 @@ final class CellDirector {
         foreachAllCells(false, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
-                if (cell.getRect().contains(x, y)) {
+                if (cell.contains(x, y)) {
                     tmp = cell;
                     return true;
                 }
@@ -81,12 +81,12 @@ final class CellDirector {
     }
 
     LinearGroup findLinearGroupBy(Cell cell, final int orientation) {
-        Cell owner = null != cell ? cell.getOwner() : null;
-        if (owner instanceof LinearGroup
-                && orientation == ((LinearGroup) owner).getOrientation()) {
-            return (LinearGroup) owner;
-        } else if (null != owner) {
-            return findLinearGroupBy(owner, orientation);
+        Cell parent = null != cell ? cell.getParent() : null;
+        if (parent instanceof LinearGroup
+                && orientation == ((LinearGroup) parent).getOrientation()) {
+            return (LinearGroup) parent;
+        } else if (null != parent) {
+            return findLinearGroupBy(parent, orientation);
         } else {
             return null;
         }
@@ -106,6 +106,27 @@ final class CellDirector {
         if (null == target || (0 == dx && 0 == dy)) {
             return;
         }
+        if (target instanceof LinearGroup) {
+            LinearGroup linear = (LinearGroup) target;
+            final int contentWidth = linear.getContentWidth();
+            final int contentHeight = linear.getContentHeight();
+            // fix dx
+            int tmp = linear.getScrollX() + dx;
+            int max = -(contentWidth - linear.getWidth());
+            if (tmp > 0) {
+                dx = -linear.getScrollX();
+            } else if (tmp < max) {
+                dx = max - linear.getScrollX();
+            }
+            // fix dy
+            tmp = linear.getScrollY() + dy;
+            max = -(contentHeight - linear.getHeight());
+            if (tmp > 0) {
+                dy = -linear.getScrollY();
+            } else if (tmp < max) {
+                dy = max - linear.getScrollY();
+            }
+        }
         target.scrollBy(dx, dy);
     }
 
@@ -115,42 +136,52 @@ final class CellDirector {
         }
         final int centerX = root.getLeft() + root.getWidth() / 2;
         final int centerY = root.getTop() + root.getHeight() / 2;
-//        final int cellCenterX = cell.getLeft() + cell.getWidth() / 2;
-//        final int cellCenterY = cell.getTop() + cell.getHeight() / 2;
-//        if (Math.abs(tmp) > 10) {
-        Movable movable = findLinearGroupBy(cell, LinearGroup.HORIZONTAL);
-        if (null != movable) {
-            movable.scrollTo(centerX, 0);
+        final int cellCenterX = cell.getLeft() + cell.getWidth() / 2;
+        final int cellCenterY = cell.getTop() + cell.getHeight() / 2;
+        int tmp = centerY - cellCenterY;
+        if (Math.abs(tmp) > 10) {
+            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, tmp);
         }
-//        }
-//        tmp = centerY - cellCenterY;
-//        if (Math.abs(tmp) > 10) {
-        movable = findLinearGroupBy(cell, LinearGroup.VERTICAL);
-        if (null != movable) {
-            movable.scrollTo(0, centerY);
+        tmp = centerX - cellCenterX;
+        if (Math.abs(tmp) > 10) {
+            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), tmp, 0);
         }
-//        }
     }
 
     void measure(int width, int height) {
-        if (hasRoot()) {
-            root.setSize(width, height);
+        if (hasRoot() && cellChanged) {
+            root.measure(width, height);
         }
     }
 
-    void layout(boolean changed, int l, int t, int r, int b) {
-        if (hasRoot()) {
-            root.setPosition(l, t);
+    private boolean cellChanged = true;
+
+    void layout(boolean viewChanged, int l, int t, int r, int b) {
+        if (hasRoot() && (viewChanged || cellChanged)) {
+            root.layout(l, t);
+            cellChanged = false;
         }
+    }
+
+    void refresh() {
+        foreachAllCells(true, new Filter<Cell>() {
+            @Override
+            public boolean call(Cell cell) {
+                cell.updateVisibleSate();
+                return false;
+            }
+        });
     }
 
     void notifyAttached(Cell cell) {
+        cellChanged = true;
         if (null != callback) {
             callback.onAttached(cell);
         }
     }
 
     void notifyDetached(Cell cell) {
+        cellChanged = true;
         if (null != callback) {
             callback.onDetached(cell);
         }

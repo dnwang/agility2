@@ -65,7 +65,7 @@ public final class CellFactory {
             return dataMap;
         }
 
-        private Cell parse(JSONObject args, CellGroup owner) throws JSONException {
+        private Cell parse(JSONObject args, CellGroup parent) throws JSONException {
             // type
             final String type = args.optString(ATTR_TYPE);
             final Cell cell;
@@ -87,10 +87,10 @@ public final class CellFactory {
                     parse(subArgsList.getJSONObject(i), (CellGroup) cell);
                 }
             }
-            if (null != owner) {
-                final CellGroup.Params p = owner.getDefaultParams();
+            if (null != parent) {
+                final CellGroup.Params p = parent.getDefaultParams();
                 bindingArgs(p, args);
-                owner.addCell(cell, p);
+                parent.addCell(cell, p);
             }
             return cell;
         }

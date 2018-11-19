@@ -33,26 +33,26 @@ public class GridGroup extends CellGroup {
     }
 
     @Override
-    protected void setSize(int width, int height) {
-        super.setSize(width, height);
+    protected void measure(int width, int height) {
+        super.measure(width, height);
         final int bW = (int) ((getWidth() - paddingLeft - paddingRight - (column - 1) * divider) * 1f / column);
         final int bH = (int) ((getHeight() - paddingTop - paddingBottom - (row - 1) * divider) * 1f / row);
-        final int size = getSubCellCount();
+        final int size = getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
             int w = bW * p.weightX + (p.weightX - 1) * divider - (p.marginLeft + p.marginRight);
             int h = bH * p.weightY + (p.weightY - 1) * divider - (p.marginTop + p.marginBottom);
-            cell.setSize(w, h);
+            cell.measure(w, h);
         }
     }
 
     @Override
-    protected void setPosition(int x, int y) {
-        super.setPosition(x, y);
+    protected void layout(int x, int y) {
+        super.layout(x, y);
         final int bW = (int) ((getWidth() - paddingLeft - paddingRight - (column - 1) * divider) * 1f / column);
         final int bH = (int) ((getHeight() - paddingTop - paddingBottom - (row - 1) * divider) * 1f / row);
-        final int size = getSubCellCount();
+        final int size = getCellCount();
         for (int i = 0; i < size; i++) {
             Cell cell = getCellAt(i);
             Params p = (GridGroup.Params) cell.getParams();
@@ -60,7 +60,7 @@ public class GridGroup extends CellGroup {
             left += p.x * (divider + bW);
             int top = getTop() + paddingTop + p.marginTop;
             top += p.y * (divider + bH);
-            cell.setPosition(left, top);
+            cell.layout(left, top);
         }
     }
 
