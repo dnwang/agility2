@@ -146,24 +146,22 @@ public class CellLayout extends ViewGroup {
                 }
                 return true;// can not return superState.
             case MotionEvent.ACTION_MOVE:
-//                int dx = (int) event.getX() - tmpPoint.x;
-//                int dy = (int) event.getY() - tmpPoint.y;
-//                int absDx = Math.abs(dx);
-//                int absDy = Math.abs(dy);
-//                if (isMoving || absDx > MOVE_SLOP || absDy > MOVE_SLOP) {
-//                    isMoving = true;
-//                    int dir = absDx > absDy ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
-//                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy);
-//                    tmpPoint.set((int) event.getX(), (int) event.getY());
-//                } else {
-//                    getParent().requestDisallowInterceptTouchEvent(false);
-//                }
+                int dx = (int) event.getX() - tmpPoint.x;
+                int dy = (int) event.getY() - tmpPoint.y;
+                int absDx = Math.abs(dx);
+                int absDy = Math.abs(dy);
+                if (isMoving || absDx > MOVE_SLOP || absDy > MOVE_SLOP) {
+                    isMoving = true;
+                    int dir = absDx > absDy ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
+                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy);
+                    tmpPoint.set((int) event.getX(), (int) event.getY());
+                } else {
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
                 return superState;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                director.moveToCenter(touchCell);
-
-
+//                director.moveToCenter(touchCell);
                 touchCell = null;
                 isMoving = false;
                 getParent().requestDisallowInterceptTouchEvent(false);

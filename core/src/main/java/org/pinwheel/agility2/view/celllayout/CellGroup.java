@@ -57,6 +57,15 @@ public class CellGroup extends Cell {
         return true;
     }
 
+    @Override
+    public void offset(int dx, int dy) {
+        super.offset(dx, dy);
+        final int size = getSubCellCount();
+        for (int i = 0; i < size; i++) {
+            getCellAt(i).offset(dx, dy);
+        }
+    }
+
     public Cell getCellAt(int order) {
         return subCells.get(order);
     }
