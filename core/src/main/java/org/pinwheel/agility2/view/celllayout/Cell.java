@@ -73,14 +73,7 @@ public class Cell {
         if (this.x == x && this.y == y) {
             return;
         }
-        int fromX = this.x;
-        int fromY = this.y;
-        this.x = x;
-        this.y = y;
-        director.notifyPositionChanged(this, fromX, fromY);
-        // tak the root cell as a reference
-        Cell root = director.getRoot();
-        updateVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
+        updatePosition(x, y);
     }
 
     protected final void setParams(CellGroup.Params p) {
@@ -104,6 +97,17 @@ public class Cell {
         }
     }
 
+    private void updatePosition(int x, int y) {
+        int fromX = this.x;
+        int fromY = this.y;
+        this.x = x;
+        this.y = y;
+        director.notifyPositionChanged(this, fromX, fromY);
+        // tak the root cell as a reference
+        Cell root = director.getRoot();
+        updateVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
+    }
+
     private void setVisible(boolean is) {
         if (stateVisible == is) {
             return;
@@ -114,6 +118,13 @@ public class Cell {
 
     public long getId() {
         return id;
+    }
+
+    public void offset(int dx, int dy) {
+        if (0 == dx && 0 == dy) {
+            return;
+        }
+        updatePosition(getLeft() + dx, getTop() + dy);
     }
 
     public int getLeft() {

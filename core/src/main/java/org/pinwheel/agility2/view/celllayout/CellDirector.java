@@ -103,10 +103,33 @@ final class CellDirector {
     }
 
     void move(Movable target, int dx, int dy) {
-        if (null == target || 0 == dx || 0 == dy) {
+        if (null == target || (0 == dx && 0 == dy)) {
             return;
         }
         target.scrollBy(dx, dy);
+    }
+
+    void moveToCenter(Cell cell) {
+        if (null == cell || !hasRoot()) {
+            return;
+        }
+        final int centerX = root.getLeft() + root.getWidth() / 2;
+        final int centerY = root.getTop() + root.getHeight() / 2;
+//        final int cellCenterX = cell.getLeft() + cell.getWidth() / 2;
+//        final int cellCenterY = cell.getTop() + cell.getHeight() / 2;
+//        if (Math.abs(tmp) > 10) {
+        Movable movable = findLinearGroupBy(cell, LinearGroup.HORIZONTAL);
+        if (null != movable) {
+            movable.scrollTo(centerX, 0);
+        }
+//        }
+//        tmp = centerY - cellCenterY;
+//        if (Math.abs(tmp) > 10) {
+        movable = findLinearGroupBy(cell, LinearGroup.VERTICAL);
+        if (null != movable) {
+            movable.scrollTo(0, centerY);
+        }
+//        }
     }
 
     void measure(int width, int height) {
@@ -122,19 +145,27 @@ final class CellDirector {
     }
 
     void notifyAttached(Cell cell) {
-        callback.onAttached(cell);
+        if (null != callback) {
+            callback.onAttached(cell);
+        }
     }
 
     void notifyDetached(Cell cell) {
-        callback.onDetached(cell);
+        if (null != callback) {
+            callback.onDetached(cell);
+        }
     }
 
     void notifyPositionChanged(Cell cell, int fromX, int fromY) {
-        callback.onPositionChanged(cell, fromX, fromY);
+        if (null != callback) {
+            callback.onPositionChanged(cell, fromX, fromY);
+        }
     }
 
     void notifyVisibleChanged(Cell cell) {
-        callback.onVisibleChanged(cell);
+        if (null != callback) {
+            callback.onVisibleChanged(cell);
+        }
     }
 
     interface LifeCycleCallback {

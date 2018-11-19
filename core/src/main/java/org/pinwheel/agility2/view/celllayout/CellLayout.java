@@ -3,14 +3,20 @@ package org.pinwheel.agility2.view.celllayout;
 import android.content.Context;
 import android.graphics.Point;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.LongSparseArray;
+import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
+import android.view.ViewTreeObserver;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Copyright (C), 2018 <br>
@@ -21,8 +27,12 @@ import android.view.ViewParent;
  * @author dnwang
  * @version 2018/11/15,11:21
  */
-public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallback {
-    public static final String TAG = "CellLayout";
+public class CellLayout extends ViewGroup {
+    private static final String TAG = "CellLayout";
+
+    private static final int TRANSITION_ADD = 0;
+    private static final int TRANSITION_REMOVE = 1;
+    private static final int TRANSITION_UPDATE = 2;
 
     public CellLayout(Context context) {
         super(context);
@@ -46,17 +56,39 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
     }
 
     private final CellDirector director = new CellDirector();
-    private Adapter adapter;
+    private final ViewManager manager = new ViewManager();
+
+    private final ViewTreeObserver.OnGlobalFocusChangeListener focusListener = new ViewTreeObserver.OnGlobalFocusChangeListener() {
+        @Override
+        public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+            if (CellLayout.this == newFocus.getParent()) {
+                director.setFocusCell(manager.findCellByView(newFocus));
+                director.moveToCenter(director.getFocusCell());
+            }
+        }
+    };
 
     private void init() {
-        director.setCallback(this);
+        director.setCallback(manager);
     }
 
-    public void setAdapter(Adapter adapter) {
-        this.adapter = adapter;
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        getViewTreeObserver().addOnGlobalFocusChangeListener(focusListener);
     }
 
-    public void setRoot(Cell root) {
+    @Override
+    protected void onDetachedFromWindow() {
+        getViewTreeObserver().removeOnGlobalFocusChangeListener(focusListener);
+        super.onDetachedFromWindow();
+    }
+
+    public void setAdapter(ViewAdapter adapter) {
+        manager.setAdapter(adapter);
+    }
+
+    public void setRootCell(Cell root) {
         director.attach(root);
         requestLayout();
     }
@@ -67,15 +99,15 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        Log.e(TAG, "onMeasure");
+        // don't support wrap_content
         director.measure(getMeasuredWidth(), getMeasuredHeight());
         // sync view
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
             View view = getChildAt(i);
-            long cellId = cellViewHolder.keyAt(cellViewHolder.indexOfValue(view));
-            Cell cell = director.findCellById(cellId);
+            Cell cell = manager.findCellByView(view);
             if (null != cell) {
                 view.measure(cell.getWidth(), cell.getHeight());
             }
@@ -90,8 +122,7 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
         final int size = getChildCount();
         for (int i = 0; i < size; i++) {
             View view = getChildAt(i);
-            long cellId = cellViewHolder.keyAt(cellViewHolder.indexOfValue(view));
-            Cell cell = director.findCellById(cellId);
+            Cell cell = manager.findCellByView(view);
             if (null != cell) {
                 view.layout(cell.getLeft(), cell.getTop(), cell.getRight(), cell.getBottom());
             }
@@ -130,6 +161,7 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
                 return superState;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+//                director.moveToCenter(touchCell);
                 touchCell = null;
                 isMoving = false;
                 getParent().requestDisallowInterceptTouchEvent(false);
@@ -151,66 +183,112 @@ public class CellLayout extends ViewGroup implements CellDirector.LifeCycleCallb
     }
 
     @Override
-    public void onAttached(Cell cell) {
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return super.dispatchKeyEvent(event);
     }
 
-    @Override
-    public void onPositionChanged(Cell cell, int fromX, int fromY) {
-        View view = cellViewHolder.get(cell.getId());
-        if (null != view) {
-            view.offsetLeftAndRight(cell.getLeft() - fromX);
-            view.offsetTopAndBottom(cell.getTop() - fromY);
-        }
+    public interface ViewAdapter {
+        int getViewPoolId(@NonNull Cell cell);
+
+        @NonNull
+        View onCreateView(@NonNull Cell cell);
+
+        void onBindView(@NonNull View view, @NonNull Cell cell);
     }
 
-    @Override
-    public void onVisibleChanged(Cell cell) {
-        if (cell instanceof CellGroup) {
-            return;
+    private final class ViewManager implements CellDirector.LifeCycleCallback {
+        private ViewAdapter adapter;
+
+        private final SparseArray<ViewPool> cellPoolMap = new SparseArray<>();
+
+        private final Map<Cell, View> cellViews = new HashMap<>();
+
+        void setAdapter(ViewAdapter adapter) {
+            this.adapter = adapter;
         }
-        if (cell.isVisible()) {
-            View cache = getCacheView(cell);
-            View view = adapter.onCreate(this, cache, cell);
-            if (view != cache) {
-                updateCacheView(cell, view);
-            }
-            if (this != view.getParent()) {
-                addView(view);
-            }
-        } else {
-            View cache = getCacheView(cell);
-            if (null != cache) {
-                if (this == cache.getParent()) {
-                    removeView(cache);
+
+        View findViewByCellId(long cellId) {
+            Set<Map.Entry<Cell, View>> entrySet = cellViews.entrySet();
+            for (Map.Entry<Cell, View> entry : entrySet) {
+                if (entry.getKey().getId() == cellId) {
+                    return entry.getValue();
                 }
-                adapter.onRecycled(cache, cell);
+            }
+            return null;
+        }
+
+        Cell findCellByView(View view) {
+            Set<Map.Entry<Cell, View>> entrySet = cellViews.entrySet();
+            for (Map.Entry<Cell, View> entry : entrySet) {
+                if (entry.getValue() == view) {
+                    return entry.getKey();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void onAttached(Cell cell) {
+            Log.d(TAG, "onAttached: " + cell);
+        }
+
+        @Override
+        public void onPositionChanged(Cell cell, int fromX, int fromY) {
+            final View view = findViewByCellId(cell.getId());
+            if (null != view) {
+                view.offsetLeftAndRight(cell.getLeft() - fromX);
+                view.offsetTopAndBottom(cell.getTop() - fromY);
             }
         }
-    }
 
-    @Override
-    public void onDetached(Cell cell) {
-    }
-
-    private View getCacheView(Cell cell) {
-        return cellViewHolder.get(cell.getId());
-    }
-
-    private void updateCacheView(Cell cell, View view) {
-        View old = getCacheView(cell);
-        ViewParent parent = null == old ? null : old.getParent();
-        if (null != parent) {
-            ((ViewGroup) parent).removeView(old);
+        @Override
+        public void onVisibleChanged(Cell cell) {
+            if (cell instanceof CellGroup) {
+                return;
+            }
+            Log.d(TAG, "onVisibleChanged: " + cell + ", is: " + cell.isVisible());
+            final int poolId = adapter.getViewPoolId(cell);
+            ViewPool pool = cellPoolMap.get(poolId);
+            if (null == pool) {
+                pool = new ViewPool();
+                cellPoolMap.put(poolId, pool);
+            }
+            if (cell.isVisible()) {
+                // add
+                View view = pool.obtain();
+                if (null == view) {
+                    view = adapter.onCreateView(cell);
+                    pool.add(view);
+                }
+                adapter.onBindView(view, cell);
+                if (CellLayout.this != view.getParent()) {
+                    CellLayout.this.addView(view);
+                }
+                cellViews.put(cell, view);
+            } else {
+                // remove
+                View view = findViewByCellId(cell.getId());
+                if (null != view) {
+                    CellLayout.this.removeView(view);
+                }
+            }
         }
-        cellViewHolder.put(cell.getId(), view);
+
+        @Override
+        public void onDetached(Cell cell) {
+            Log.d(TAG, "onDetached: " + cell);
+        }
+
     }
 
-    private LongSparseArray<View> cellViewHolder = new LongSparseArray<>();
+    private static final class ViewPool {
+        View obtain() {
+            return null;
+        }
 
-    public interface Adapter {
-        View onCreate(ViewGroup parent, View cache, Cell cell);
+        void add(View view) {
 
-        void onRecycled(View view, Cell cell);
+        }
     }
 
 }

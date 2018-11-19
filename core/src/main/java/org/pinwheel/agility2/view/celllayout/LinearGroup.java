@@ -57,9 +57,11 @@ public class LinearGroup extends CellGroup implements Movable {
         super.setPosition(x, y);
         int tmp;
         if (HORIZONTAL == orientation) {
-            tmp = getLeft() + getScrollX() + paddingLeft;
+            tmp = getLeft() + paddingLeft;
+//            tmp = getLeft() + getScrollX() + paddingLeft;
         } else {
-            tmp = getTop() + getScrollY() + paddingTop;
+            tmp = getTop() + paddingTop;
+//            tmp = getTop() + getScrollY() + paddingTop;
         }
         final int size = getSubCellCount();
         for (int i = 0; i < size; i++) {
@@ -87,48 +89,28 @@ public class LinearGroup extends CellGroup implements Movable {
 
     @Override
     public void scrollBy(int dx, int dy) {
-        dx = (VERTICAL == orientation || contentWidth < getWidth()) ? 0 : dx;
-        dy = (HORIZONTAL == orientation || contentHeight < getHeight()) ? 0 : dy;
-        if (0 == dx && 0 == dy) {
-            return;
-        }
-        // fix dx
-        int tmp = scrollX + dx;
-        int max = -(contentWidth - getWidth());
-        if (tmp > 0) {
-            dx = -scrollX;
-        } else if (tmp < max) {
-            dx = max - scrollX;
-        }
-        // fix dy
-        tmp = scrollY + dy;
-        max = -(contentHeight - getHeight());
-        if (tmp > 0) {
-            dy = -scrollY;
-        } else if (tmp < max) {
-            dy = max - scrollY;
-        }
-        // move
-        if (0 == dx && 0 == dy) {
-            return;
-        }
-        final int size = getSubCellCount();
-        for (int i = 0; i < size; i++) {
-            Cell cell = getCellAt(i);
-            cell.setPosition(cell.getLeft() + dx, cell.getTop() + dy);
-        }
-        scrollX += dx;
-        scrollY += dy;
+        scrollTo(getScrollX() + dx, getScrollY() + dy);
     }
 
     @Override
-    public void scrollTo(int x, int y) {
-        if (scrollX == x && scrollY == y) {
-            return;
+    public void scrollTo(int newX, int newY) {
+        final int x = getLeft();
+        final int y = getTop();
+        if (HORIZONTAL == orientation && x != newX) {
+            scrollX = newX - x;
+            final int size = getSubCellCount();
+            for (int i = 0; i < size; i++) {
+                Cell cell = getCellAt(i);
+                cell.offset(newX, cell.getTop());
+            }
+        } else if (VERTICAL == orientation && y != newY) {
+            scrollY = newY - y;
+            final int size = getSubCellCount();
+            for (int i = 0; i < size; i++) {
+                Cell cell = getCellAt(i);
+                cell.offset(cell.getLeft(), newY);
+            }
         }
-        final int dx = x - (getLeft() + getScrollX());
-        final int dy = y - (getTop() + getScrollY());
-        scrollBy(dx, dy);
     }
 
     @Override
