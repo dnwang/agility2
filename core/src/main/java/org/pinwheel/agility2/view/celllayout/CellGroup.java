@@ -42,19 +42,28 @@ public class CellGroup extends Cell implements Movable {
         cell.setParent(this);
         cell.setParams(p);
         subCells.add(cell);
+        //
+        final CellDirector director = getDirector();
+        if (null != director) {
+            director.onCellMount(cell, this);
+        }
     }
 
-    public boolean removeCell(Cell cell) {
+    public void removeCell(Cell cell) {
         if (null == cell) {
-            return false;
+            return;
         }
         final boolean has = subCells.contains(cell);
         if (!has) {
-            return false;
+            return;
         }
         subCells.remove(cell);
         cell.setParent(null);
-        return true;
+        //
+        final CellDirector director = getDirector();
+        if (null != director) {
+            director.onCellUnMount(cell, this);
+        }
     }
 
     public Cell getCellAt(int order) {

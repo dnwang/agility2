@@ -8,6 +8,7 @@ import android.util.Log;
 import android.util.LongSparseArray;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -35,14 +36,23 @@ import java.io.IOException;
 public final class CellLayoutActivity extends Activity {
 
     private CellLayout cellLayout;
-
     private LongSparseArray<Bundle> cellDataMap;
+
+    private final ViewTreeObserver.OnGlobalFocusChangeListener focusListener = new ViewTreeObserver.OnGlobalFocusChangeListener() {
+        @Override
+        public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+            if (newFocus.hasFocus() && cellLayout == newFocus.getParent()) {
+                cellLayout.moveToCenter(newFocus, true);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         setContentView(getTestLayout());
+        cellLayout.getViewTreeObserver().addOnGlobalFocusChangeListener(focusListener);
         try {
             CellFactory.CellBundle bundle = CellFactory.load(IOUtils.stream2String(getResources().getAssets().open("layout.json")));
             cellDataMap = bundle.dataMap;
@@ -50,6 +60,12 @@ public final class CellLayoutActivity extends Activity {
         } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        cellLayout.getViewTreeObserver().removeOnGlobalFocusChangeListener(focusListener);
+        super.onDestroy();
     }
 
     private CellLayout getTestLayout() {
@@ -99,7 +115,7 @@ public final class CellLayoutActivity extends Activity {
             @Override
             public void onViewRecycled(@NonNull View view, @NonNull Cell cell) {
                 Log.e("CellLayoutActivity", "onViewRecycled: " + cell);
-                view.setBackgroundColor(getColor());
+//                view.setBackgroundColor(getColor());
             }
         });
         return cellLayout;

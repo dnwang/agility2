@@ -12,7 +12,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,30 +53,8 @@ public class CellLayout extends ViewGroup {
     private final CellDirector director = new CellDirector();
     private final ViewManager manager = new ViewManager();
 
-    private final ViewTreeObserver.OnGlobalFocusChangeListener focusListener = new ViewTreeObserver.OnGlobalFocusChangeListener() {
-        @Override
-        public void onGlobalFocusChanged(View oldFocus, View newFocus) {
-            if (CellLayout.this == newFocus.getParent()) {
-                director.setFocusCell(manager.findCellByView(newFocus));
-                director.moveToCenter(director.getFocusCell());
-            }
-        }
-    };
-
     private void init() {
         director.setCallback(manager);
-    }
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        getViewTreeObserver().addOnGlobalFocusChangeListener(focusListener);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        getViewTreeObserver().removeOnGlobalFocusChangeListener(focusListener);
-        super.onDetachedFromWindow();
     }
 
     public void setAdapter(ViewAdapter adapter) {
@@ -85,18 +62,23 @@ public class CellLayout extends ViewGroup {
     }
 
     public void setRootCell(Cell root) {
-        director.attach(root);
-        // after layout
-        post(new Runnable() {
-            @Override
-            public void run() {
-                director.refresh();
-            }
-        });
+        director.setRoot(root);
     }
 
     public Cell findCellById(long id) {
         return director.findCellById(id);
+    }
+
+    public View findViewByCell(Cell cell) {
+        return manager.findViewByCell(cell);
+    }
+
+    public void moveToCenter(View view, boolean anim) {
+        moveToCenter(manager.findCellByView(view), anim);
+    }
+
+    public void moveToCenter(Cell cell, boolean anim) {
+        director.moveToCenter(cell, anim);
     }
 
     @Override
@@ -133,7 +115,6 @@ public class CellLayout extends ViewGroup {
         }
     }
 
-    private static int MOVE_SLOP = 10;
     private final Point tmpPoint = new Point();
     private Cell touchCell = null;
     private boolean isMoving = false;
@@ -154,10 +135,10 @@ public class CellLayout extends ViewGroup {
                 int dy = (int) event.getY() - tmpPoint.y;
                 int absDx = Math.abs(dx);
                 int absDy = Math.abs(dy);
-                if (isMoving || absDx > MOVE_SLOP || absDy > MOVE_SLOP) {
+                if (isMoving || absDx > 10 || absDy > 10) {
                     isMoving = true;
                     int dir = absDx > absDy ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
-                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy);
+                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy, false);
                     tmpPoint.set((int) event.getX(), (int) event.getY());
                 } else {
                     getParent().requestDisallowInterceptTouchEvent(false);
@@ -210,20 +191,24 @@ public class CellLayout extends ViewGroup {
         }
 
         View findViewByCell(Cell cell) {
-            Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
-            for (Map.Entry<Cell, View> entry : entrySet) {
-                if (entry.getKey().equals(cell)) {
-                    return entry.getValue();
+            if (null != cell) {
+                Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
+                for (Map.Entry<Cell, View> entry : entrySet) {
+                    if (entry.getKey().equals(cell)) {
+                        return entry.getValue();
+                    }
                 }
             }
             return null;
         }
 
         Cell findCellByView(View view) {
-            Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
-            for (Map.Entry<Cell, View> entry : entrySet) {
-                if (entry.getValue() == view) {
-                    return entry.getKey();
+            if (null != view) {
+                Set<Map.Entry<Cell, View>> entrySet = cellViewMap.entrySet();
+                for (Map.Entry<Cell, View> entry : entrySet) {
+                    if (entry.getValue() == view) {
+                        return entry.getKey();
+                    }
                 }
             }
             return null;

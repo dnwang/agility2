@@ -33,14 +33,14 @@ public class Cell {
 
     final void attach(CellDirector director) {
         this.director = director;
-        this.director.notifyAttached(this);
+        this.director.onCellAttached(this);
     }
 
     final void detach() {
         parent = null;
         isVisible = false;
         if (null != director) {
-            director.notifyDetached(this);
+            director.onCellDetached(this);
         }
         director = null;
     }
@@ -125,7 +125,7 @@ public class Cell {
         final int oldX = getLeft();
         final int oldY = getTop();
         setPosition(oldX + dx, oldY + dy);
-        director.notifyPositionChanged(this, oldX, oldY);
+        director.onCellPositionChanged(this, oldX, oldY);
     }
 
     public final void updateVisibleSate() {
@@ -133,7 +133,7 @@ public class Cell {
         Cell root = director.getRoot();
         setVisible(root.getLeft(), root.getTop(), root.getRight(), root.getBottom());
         if (oldState != isVisible()) {
-            director.notifyVisibleChanged(this);
+            director.onCellVisibleChanged(this);
         }
     }
 

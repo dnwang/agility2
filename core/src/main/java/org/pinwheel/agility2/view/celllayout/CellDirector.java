@@ -1,5 +1,11 @@
 package org.pinwheel.agility2.view.celllayout;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
+import android.util.LongSparseArray;
+
 /**
  * Copyright (C), 2018 <br>
  * <br>
@@ -18,27 +24,12 @@ final class CellDirector {
         return null != root;
     }
 
-    void attach(Cell cell) {
-        detachRoot();// detach old
+    void setRoot(Cell cell) {
+        if (hasRoot()) {
+            onCellUnMount(root, null);
+        }
         root = cell;
-        foreachAllCells(true, new Filter<Cell>() {
-            @Override
-            public boolean call(Cell cell) {
-                cell.attach(CellDirector.this);
-                return false;
-            }
-        });
-    }
-
-    private void detachRoot() {
-        foreachAllCells(true, new Filter<Cell>() {
-            @Override
-            public boolean call(Cell cell) {
-                cell.removeFromParent();
-                cell.detach();
-                return false;
-            }
-        });
+        onCellMount(root, null);
     }
 
     Cell getRoot() {
@@ -92,22 +83,15 @@ final class CellDirector {
         }
     }
 
-    private Cell focusCell = null;
+    private final LongSparseArray<ValueAnimator> movingAnimator = new LongSparseArray<>(4);
+    private final static float MOVE_SPEED = 1.5f; // px/ms
 
-    void setFocusCell(Cell cell) {
-        focusCell = cell;
-    }
-
-    Cell getFocusCell() {
-        return focusCell;
-    }
-
-    void move(Movable target, int dx, int dy) {
-        if (null == target || (0 == dx && 0 == dy)) {
+    void move(final CellGroup cell, int dx, int dy, final boolean withAnimation) {
+        if (null == cell || (0 == dx && 0 == dy)) {
             return;
         }
-        if (target instanceof LinearGroup) {
-            LinearGroup linear = (LinearGroup) target;
+        if (cell instanceof LinearGroup) {
+            LinearGroup linear = (LinearGroup) cell;
             final int contentWidth = linear.getContentWidth();
             final int contentHeight = linear.getContentHeight();
             // fix dx
@@ -127,10 +111,51 @@ final class CellDirector {
                 dy = max - linear.getScrollY();
             }
         }
-        target.scrollBy(dx, dy);
+        if (!withAnimation || (Math.abs(dx) + Math.abs(dy) < 10)) {
+            cell.scrollBy(dx, dy);
+        } else {
+            ValueAnimator anim = movingAnimator.get(cell.getId());
+            if (null != anim) {
+                anim.cancel();
+            }
+            final long duration = (long) (Math.max(Math.abs(dx), Math.abs(dy)) / MOVE_SPEED);
+            anim = ValueAnimator.ofPropertyValuesHolder(
+                    PropertyValuesHolder.ofInt("x", 0, dx),
+                    PropertyValuesHolder.ofInt("y", 0, dy)
+            ).setDuration(duration);
+            anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                int lastDx, lastDy;
+
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    int dx = (int) animation.getAnimatedValue("x");
+                    int dy = (int) animation.getAnimatedValue("y");
+                    cell.scrollBy(dx - lastDx, dy - lastDy);
+                    lastDx = dx;
+                    lastDy = dy;
+                }
+            });
+            anim.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    remove();
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    remove();
+                }
+
+                private void remove() {
+                    movingAnimator.remove(cell.getId());
+                }
+            });
+            anim.start();
+            movingAnimator.put(cell.getId(), anim);
+        }
     }
 
-    void moveToCenter(Cell cell) {
+    void moveToCenter(final Cell cell, final boolean withAnimation) {
         if (null == cell || !hasRoot()) {
             return;
         }
@@ -138,13 +163,12 @@ final class CellDirector {
         final int centerY = root.getTop() + root.getHeight() / 2;
         final int cellCenterX = cell.getLeft() + cell.getWidth() / 2;
         final int cellCenterY = cell.getTop() + cell.getHeight() / 2;
-        int tmp = centerY - cellCenterY;
-        if (Math.abs(tmp) > 10) {
-            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, tmp);
-        }
-        tmp = centerX - cellCenterX;
-        if (Math.abs(tmp) > 10) {
-            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), tmp, 0);
+        if (!withAnimation) {
+            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, false);
+            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, false);
+        } else {
+            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, true);
+            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, true);
         }
     }
 
@@ -154,16 +178,18 @@ final class CellDirector {
         }
     }
 
-    private boolean cellChanged = true;
+    private boolean cellChanged;
 
     void layout(boolean viewChanged, int l, int t, int r, int b) {
         if (hasRoot() && (viewChanged || cellChanged)) {
             root.layout(l, t);
             cellChanged = false;
+            //
+            refreshState();
         }
     }
 
-    void refresh() {
+    private void refreshState() {
         foreachAllCells(true, new Filter<Cell>() {
             @Override
             public boolean call(Cell cell) {
@@ -173,27 +199,55 @@ final class CellDirector {
         });
     }
 
-    void notifyAttached(Cell cell) {
+    void onCellMount(Cell cell, CellGroup parent) {
         cellChanged = true;
+        if (cell instanceof CellGroup) {
+            ((CellGroup) cell).foreachAllCells(true, new Filter<Cell>() {
+                @Override
+                public boolean call(Cell cell) {
+                    cell.attach(CellDirector.this);
+                    return false;
+                }
+            });
+        } else {
+            cell.attach(CellDirector.this);
+        }
+    }
+
+    void onCellAttached(Cell cell) {
         if (null != callback) {
             callback.onAttached(cell);
         }
     }
 
-    void notifyDetached(Cell cell) {
-        cellChanged = true;
+    void onCellDetached(Cell cell) {
         if (null != callback) {
             callback.onDetached(cell);
         }
     }
 
-    void notifyPositionChanged(Cell cell, int fromX, int fromY) {
+    void onCellUnMount(Cell cell, CellGroup parent) {
+        cellChanged = true;
+        if (cell instanceof CellGroup) {
+            ((CellGroup) cell).foreachAllCells(true, new Filter<Cell>() {
+                @Override
+                public boolean call(Cell cell) {
+                    cell.detach();
+                    return false;
+                }
+            });
+        } else {
+            cell.detach();
+        }
+    }
+
+    void onCellPositionChanged(Cell cell, int fromX, int fromY) {
         if (null != callback) {
             callback.onPositionChanged(cell, fromX, fromY);
         }
     }
 
-    void notifyVisibleChanged(Cell cell) {
+    void onCellVisibleChanged(Cell cell) {
         if (null != callback) {
             callback.onVisibleChanged(cell);
         }
