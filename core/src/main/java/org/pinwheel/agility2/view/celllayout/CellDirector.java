@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.util.Log;
 import android.util.LongSparseArray;
 
 /**
@@ -86,7 +87,7 @@ final class CellDirector {
     private final LongSparseArray<ValueAnimator> movingAnimator = new LongSparseArray<>(4);
     private final static float MOVE_SPEED = 1.5f; // px/ms
 
-    void move(final CellGroup cell, int dx, int dy, final boolean withAnimation) {
+    void scrollBy(final CellGroup cell, int dx, int dy, final boolean withAnimation) {
         if (null == cell || (0 == dx && 0 == dy)) {
             return;
         }
@@ -111,6 +112,7 @@ final class CellDirector {
                 dy = max - linear.getScrollY();
             }
         }
+        Log.e("CellLayout", "[scrollBy] dx: " + dx + ", dy: " + dy);
         if (!withAnimation || (Math.abs(dx) + Math.abs(dy) < 10)) {
             cell.scrollBy(dx, dy);
         } else {
@@ -155,8 +157,8 @@ final class CellDirector {
         }
     }
 
-    void moveToCenter(final Cell cell, final boolean withAnimation) {
-        if (null == cell || !hasRoot()) {
+    void scrollToCenter(final Cell cell, final boolean withAnimation) {
+        if (null == cell) {
             return;
         }
         final int centerX = root.getLeft() + root.getWidth() / 2;
@@ -164,11 +166,11 @@ final class CellDirector {
         final int cellCenterX = cell.getLeft() + cell.getWidth() / 2;
         final int cellCenterY = cell.getTop() + cell.getHeight() / 2;
         if (!withAnimation) {
-            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, false);
-            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, false);
+            scrollBy(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, false);
+            scrollBy(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, false);
         } else {
-            move(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, true);
-            move(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, true);
+            scrollBy(findLinearGroupBy(cell, LinearGroup.VERTICAL), 0, centerY - cellCenterY, true);
+            scrollBy(findLinearGroupBy(cell, LinearGroup.HORIZONTAL), centerX - cellCenterX, 0, true);
         }
     }
 

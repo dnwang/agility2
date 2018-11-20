@@ -104,7 +104,7 @@ public class CellGroup extends Cell implements Movable {
 
     @Override
     public void scrollTo(int x, int y) {
-        int left = getLeft(), top = getTop();
+        int left = getLeft() + getScrollX(), top = getTop() + getScrollY();
         if (left == x && top == y) {
             return;
         }

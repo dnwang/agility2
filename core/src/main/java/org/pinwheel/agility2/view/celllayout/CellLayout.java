@@ -78,7 +78,7 @@ public class CellLayout extends ViewGroup {
     }
 
     public void moveToCenter(Cell cell, boolean anim) {
-        director.moveToCenter(cell, anim);
+        director.scrollToCenter(cell, anim);
     }
 
     @Override
@@ -115,6 +115,29 @@ public class CellLayout extends ViewGroup {
         }
     }
 
+    @Override
+    public void scrollTo(int x, int y) {
+        if (director.hasRoot()) {
+            final Cell root = director.getRoot();
+            if (root instanceof CellGroup) {
+                CellGroup cell = (CellGroup) root;
+                int left = cell.getLeft() + cell.getScrollX();
+                int top = cell.getTop() + cell.getScrollY();
+                director.scrollBy(cell, x - left, y - top, false);
+            }
+        }
+    }
+
+    @Override
+    public void scrollBy(int x, int y) {
+        if (director.hasRoot()) {
+            final Cell root = director.getRoot();
+            if (root instanceof CellGroup) {
+                director.scrollBy((CellGroup) root, x, y, false);
+            }
+        }
+    }
+
     private final Point tmpPoint = new Point();
     private Cell touchCell = null;
     private boolean isMoving = false;
@@ -138,7 +161,7 @@ public class CellLayout extends ViewGroup {
                 if (isMoving || absDx > 10 || absDy > 10) {
                     isMoving = true;
                     int dir = absDx > absDy ? LinearGroup.HORIZONTAL : LinearGroup.VERTICAL;
-                    director.move(director.findLinearGroupBy(touchCell, dir), dx, dy, false);
+                    director.scrollBy(director.findLinearGroupBy(touchCell, dir), dx, dy, false);
                     tmpPoint.set((int) event.getX(), (int) event.getY());
                 } else {
                     getParent().requestDisallowInterceptTouchEvent(false);
