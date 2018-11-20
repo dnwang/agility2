@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="org.pinwheel.demo">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -9,7 +10,8 @@
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="agility2"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:theme="@android:style/Theme.DeviceDefault.Light"
+        tools:ignore="GoogleAppIndexingWarning">
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -24,12 +26,6 @@
         <activity
             android:name="org.pinwheel.demo.MainActivity"
             android:label="agility2">
-
-        </activity>
-
-        <activity
-            android:name=".CellLayoutActivity"
-            android:screenOrientation="landscape" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
