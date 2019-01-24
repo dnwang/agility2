@@ -20,7 +20,7 @@ public final class FileUtils {
         boolean result = false;
         if (null != file) {
             File path = file.getParentFile();
-            if (!path.exists()) {
+            if (null != path && !path.exists()) {
                 result = path.mkdirs();
             }
         }

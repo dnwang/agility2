@@ -187,52 +187,54 @@ public enum ActivityRouter {
         }
     }
 
-    public void start(final LaunchTask... tasks) {
-        start(null, tasks);
+    public void start(final Context ctx, final LaunchTask... tasks) {
+        start(ctx, null, tasks);
     }
 
-    public void start(final Bundle bundle, final LaunchTask... tasks) {
+    public void start(final Context ctx, final Bundle bundle, final LaunchTask... tasks) {
         if (null == tasks || 0 == tasks.length) {
+            LogUtils.e(TAG, "Can't start empty tasks");
             return;
         }
         if (Looper.myLooper() != Looper.getMainLooper()) {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
-                    start(bundle, tasks);
+                    start(ctx, bundle, tasks);
                 }
             });
             return;
         }
-        final Context ctx = CommonTools.getTopActivity();
-        if (null != ctx) {
-            if (1 == tasks.length) {
-                final Intent intent = createIntent(ctx, tasks[0]);
-                if (!executeFilters(intent)) {
-                    if (null != bundle) {
-                        ctx.startActivity(intent, bundle);
-                    } else {
-                        ctx.startActivity(intent);
-                    }
+        if (null == ctx) {
+            LogUtils.e(TAG, "Can't start activity, because context = null !!!");
+            return;
+        }
+        if (1 == tasks.length) {
+            final Intent intent = createIntent(ctx, tasks[0]);
+            if (!executeFilters(intent)) {
+                if (null != bundle) {
+                    ctx.startActivity(intent, bundle);
+                } else {
+                    ctx.startActivity(intent);
                 }
-            } else {
-                Intent[] intents = new Intent[tasks.length];
-                int i = 0;
-                for (; i < tasks.length; i++) {
-                    intents[i] = createIntent(ctx, tasks[i]);
-                    if (executeFilters(intents[i])) {
-                        break;
-                    }
+            }
+        } else {
+            Intent[] intents = new Intent[tasks.length];
+            int i = 0;
+            for (; i < tasks.length; i++) {
+                intents[i] = createIntent(ctx, tasks[i]);
+                if (executeFilters(intents[i])) {
+                    break;
                 }
-                if (i != intents.length) {
-                    intents = Arrays.copyOf(intents, i);
-                }
-                if (intents.length > 0) {
-                    if (null != bundle) {
-                        ctx.startActivities(intents, bundle);
-                    } else {
-                        ctx.startActivities(intents);
-                    }
+            }
+            if (i != intents.length) {
+                intents = Arrays.copyOf(intents, i);
+            }
+            if (intents.length > 0) {
+                if (null != bundle) {
+                    ctx.startActivities(intents, bundle);
+                } else {
+                    ctx.startActivities(intents);
                 }
             }
         }
@@ -266,6 +268,7 @@ public enum ActivityRouter {
 
     public static final class LaunchTask {
         private final Class<? extends Activity> cls;
+        private Context ctx;
         private Bundle args = null;
         private int flags = 0;
 
@@ -303,8 +306,17 @@ public enum ActivityRouter {
             return this;
         }
 
+        public LaunchTask setContext(Context ctx) {
+            this.ctx = ctx;
+            return this;
+        }
+
         public void start(Bundle bundle) {
-            INSTANCE.start(bundle, this);
+            Context from = ctx;
+            if (null == from) {
+                from = CommonTools.getTopActivity();
+            }
+            INSTANCE.start(from, bundle, this);
         }
 
         public void start() {
@@ -317,14 +329,24 @@ public enum ActivityRouter {
     }
 
     public static final class LaunchTaskGroup {
+        private Context ctx;
         public final LaunchTask[] tasks;
 
         private LaunchTaskGroup(LaunchTask... tasks) {
             this.tasks = tasks;
         }
 
+        public LaunchTaskGroup setContext(Context ctx) {
+            this.ctx = ctx;
+            return this;
+        }
+
         public void start(Bundle bundle) {
-            INSTANCE.start(bundle, tasks);
+            Context from = ctx;
+            if (null == from) {
+                from = CommonTools.getTopActivity();
+            }
+            INSTANCE.start(from, bundle, tasks);
         }
 
         public void start() {
